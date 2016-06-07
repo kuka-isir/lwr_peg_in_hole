@@ -43,7 +43,7 @@ int main(int argc, char **argv)
   collision_object.id = object_name;
 
   // Define the mesh //
-  shapes::Mesh* m = shapes::createMeshFromResource(path_to_mesh);
+  shapes::Mesh* m = shapes::createMeshFromResource("package://lwr_peg_in_hole/meshes/"+object_name+".stl");
 
   shape_msgs::Mesh co_mesh;
   shapes::ShapeMsg co_mesh_msg;
