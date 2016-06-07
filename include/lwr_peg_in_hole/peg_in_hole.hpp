@@ -85,20 +85,6 @@
 
 typedef move_group_interface::MoveGroup::Plan MoveGroupPlan;
 
-// struct Vec7 {
-//    float px, py, pz, qx, qy, qz, qw;
-// };
-// 
-// void operator >> (const YAML::Node& node, Vec7& v) {
-//    node[0] >> v.px;
-//    node[1] >> v.py;
-//    node[2] >> v.pz;
-//    node[3] >> v.qx;
-//    node[4] >> v.qy;
-//    node[5] >> v.qz;
-//    node[6] >> v.qw;  
-// }
-
 class PegInHole
 {
 public:
@@ -147,35 +133,8 @@ public:
   // From current pose, move arm vertically to target z
   bool verticalMoveBis(double target_z);
   
-  // Get the collision object corresponding to object name
-  bool getCollisionObject(const std::string obj_name, moveit_msgs::CollisionObject &object);
-  
-  // Add a cylinder in the scene at the specified location
-  bool addCylinderObject(const geometry_msgs::Pose object_pose);
-  
-  // Add a box in the scene at the specified location
-  bool addBoxObject(const geometry_msgs::Pose object_pose);
-  
-  // Add an "epingle" in the scene at the specified location
-  bool addEpingleObject(const geometry_msgs::Pose object_pose);
-  
-  // Add an "plaque" in the scene at the specified location
-  bool addPlaqueObject(const geometry_msgs::Pose object_pose);
-  
   // Look for the object name in the scene and return its collision object
   moveit_msgs::CollisionObjectPtr getCollisionObject(std::string object_name);
-
-  // Go on top of an epingle
-  bool moveAboveEpingle(const std::string obj_name);
-  
-  // Go on top of a hole
-  bool moveAbovePlaque(const std::string obj_name);
-  
-  // Go to an epingle
-  bool moveToEpingle(const std::string obj_name);
-  
-  // Go to a hole
-  bool moveToPlaque(const std::string obj_name);
 
   // attach the collision model to the robot
   bool attachObject(std::string object_name);  
@@ -186,9 +145,10 @@ public:
   // Remove all objects of the world and also the ones attached to the robot
   void cleanObjects();
   
-  
+  // Read yaml file with holes position and save them
   bool loadHolesLocation(const std::string obj_name);
   
+  // Move above a specific hole of the specified object
   bool moveAboveObjectHole(const std::string obj_name, const int hole_nb);
 
   //*** Class variables ***//

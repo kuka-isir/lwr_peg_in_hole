@@ -276,22 +276,6 @@ bool PegInHole::moveToRandomTarget()
   }
 }
 
-bool PegInHole::getCollisionObject(const std::string obj_name, moveit_msgs::CollisionObject &object)
-{
-  // Update planning scene
-  getPlanningScene(planning_scene_msg_, full_planning_scene_);
-
-  for(int i=0;i<planning_scene_msg_.world.collision_objects.size();i++){
-    if(planning_scene_msg_.world.collision_objects[i].id == obj_name){
-      object = planning_scene_msg_.world.collision_objects[i];
-      ROS_INFO_STREAM("Found object "<< obj_name <<" in the planning scene");
-      return true;
-    }
-  }
-  ROS_ERROR_STREAM("Failed to find object "<< obj_name <<" in the planning scene");
-  return false;
-}
-
 bool PegInHole::verticalMove(double target_z)
 {
   ROS_INFO("Vertical move to target z: %f", target_z);
@@ -395,125 +379,6 @@ bool PegInHole::verticalMoveBis(double target_z)
   
 }
 
-bool PegInHole::addCylinderObject(const geometry_msgs::Pose object_pose)
-{
-  getPlanningScene(planning_scene_msg_, full_planning_scene_);
-  
-  moveit_msgs::CollisionObject collision_object;
-  collision_object.id = "cylinder";
-  collision_object.header.frame_id = "base_link";
-  collision_object.header.stamp = ros::Time::now();
-  collision_object.operation = moveit_msgs::CollisionObject::ADD;
-  
-  // Define the collision object as a cylinder
-  shape_msgs::SolidPrimitive primitive_object;
-  primitive_object.type = shape_msgs::SolidPrimitive::CYLINDER;
-  primitive_object.dimensions.push_back(0.13); // height
-  primitive_object.dimensions.push_back(0.015); // radius
-  collision_object.primitives.push_back(primitive_object);
-  collision_object.primitive_poses.push_back(object_pose);
-
-  // Put the object in the environment //
-  planning_scene_msg_.world.collision_objects.clear();
-  planning_scene_msg_.world.collision_objects.push_back(collision_object);
-  planning_scene_msg_.is_diff = true;
-  planning_scene_diff_publisher_.publish(planning_scene_msg_);
-    
-  return true;
-}
-
-
-bool PegInHole::addBoxObject(const geometry_msgs::Pose object_pose)
-{
-  getPlanningScene(planning_scene_msg_, full_planning_scene_);
-  
-  moveit_msgs::CollisionObject collision_object;
-  collision_object.id = "box";
-  collision_object.header.frame_id = "base_link";
-  collision_object.header.stamp = ros::Time::now();
-  collision_object.operation = moveit_msgs::CollisionObject::ADD;
-  
-  // Define the collision object as a cylinder
-  shape_msgs::SolidPrimitive primitive_object;
-  primitive_object.type = shape_msgs::SolidPrimitive::BOX;
-  primitive_object.dimensions.push_back(0.5); 
-  primitive_object.dimensions.push_back(0.5);
-  primitive_object.dimensions.push_back(0.5);
-  collision_object.primitives.push_back(primitive_object);
-  collision_object.primitive_poses.push_back(object_pose);
-
-  // Put the object in the environment //
-  planning_scene_msg_.world.collision_objects.clear();
-  planning_scene_msg_.world.collision_objects.push_back(collision_object);
-  planning_scene_msg_.is_diff = true;
-  planning_scene_diff_publisher_.publish(planning_scene_msg_);
-    
-  return true;
-}
-
-bool PegInHole::addEpingleObject(const geometry_msgs::Pose object_pose)
-{
-  getPlanningScene(planning_scene_msg_, full_planning_scene_);
-  
-  moveit_msgs::CollisionObject collision_object;
-  collision_object.id = "epingle";
-  collision_object.header.frame_id = "base_link";
-  collision_object.header.stamp = ros::Time::now();
-  collision_object.operation = moveit_msgs::CollisionObject::ADD;
-  
-  // Define the collision object as a mesh
-  shapes::Mesh* m;
-  shape_msgs::Mesh co_mesh;
-  shapes::ShapeMsg co_mesh_msg;  
-  m = shapes::createMeshFromResource("package://lwr_pick_n_place/meshes/epingle.stl");
-  shapes::constructMsgFromShape(m,co_mesh_msg);
-  co_mesh = boost::get<shape_msgs::Mesh>(co_mesh_msg);
-  collision_object.meshes.clear();
-  collision_object.mesh_poses.clear();
-  collision_object.meshes.push_back(co_mesh);
-  collision_object.mesh_poses.push_back(object_pose);
-
-  // Put the object in the environment //
-  planning_scene_msg_.world.collision_objects.clear();
-  planning_scene_msg_.world.collision_objects.push_back(collision_object);
-  planning_scene_msg_.is_diff = true;
-  planning_scene_diff_publisher_.publish(planning_scene_msg_);
-    
-  return true;
-}
-
-bool PegInHole::addPlaqueObject(const geometry_msgs::Pose object_pose)
-{
-  getPlanningScene(planning_scene_msg_, full_planning_scene_);
-  
-  moveit_msgs::CollisionObject collision_object;
-  collision_object.id = "plaque";
-  collision_object.header.frame_id = "base_link";
-  collision_object.header.stamp = ros::Time::now();
-  collision_object.operation = moveit_msgs::CollisionObject::ADD;
-  
-  // Define the collision object as a mesh
-  shapes::Mesh* m;
-  shape_msgs::Mesh co_mesh;
-  shapes::ShapeMsg co_mesh_msg;  
-  m = shapes::createMeshFromResource("package://lwr_peg_in_hole/meshes/holes_board.stl");
-  shapes::constructMsgFromShape(m,co_mesh_msg);
-  co_mesh = boost::get<shape_msgs::Mesh>(co_mesh_msg);
-  collision_object.meshes.clear();
-  collision_object.mesh_poses.clear();
-  collision_object.meshes.push_back(co_mesh);
-  collision_object.mesh_poses.push_back(object_pose);
-
-  // Put the object in the environment //
-  planning_scene_msg_.world.collision_objects.clear();
-  planning_scene_msg_.world.collision_objects.push_back(collision_object);
-  planning_scene_msg_.is_diff = true;
-  planning_scene_diff_publisher_.publish(planning_scene_msg_);
-    
-  return true;
-}
-
-
 moveit_msgs::CollisionObjectPtr PegInHole::getCollisionObject(std::string object_name)
 {
   // update the planning scene to get the robot's state
@@ -606,51 +471,6 @@ void PegInHole::cleanObjects(){
   planning_scene_diff_publisher_.publish(planning_scene_msg_);
 }
 
-
-bool PegInHole::moveAbovePlaque(const std::string obj_name)
-{
-  ROS_INFO_STREAM("Moving above "<<obj_name);
-  moveit_msgs::CollisionObjectPtr coll_obj = getCollisionObject(obj_name);
-  if (!coll_obj)
-    return false;
-
-  geometry_msgs::PoseStamped obj_pose;
-  geometry_msgs::Pose target_pose;
-  obj_pose.header = coll_obj->header;
-  obj_pose.pose = coll_obj->mesh_poses[0];
-  tf_->transformPose(base_frame_, obj_pose, obj_pose);
-  
-  tf::Transform object_transform;
-  object_transform.setOrigin(tf::Vector3(obj_pose.pose.position.x, obj_pose.pose.position.y, obj_pose.pose.position.z));
-  object_transform.setRotation(tf::Quaternion(obj_pose.pose.orientation.x, obj_pose.pose.orientation.y, obj_pose.pose.orientation.z, obj_pose.pose.orientation.w));
-  
-  tf::Transform up_transform;
-  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.15));
-  tf::Quaternion rotation;
-  rotation.setRPY(0,0,0);
-  up_transform.setRotation(rotation);
-  
-  tf::Transform pi_rotation_transform;
-  pi_rotation_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-  tf::Quaternion pi_rotation;
-  pi_rotation.setRPY(M_PI,0,0);
-  pi_rotation_transform.setRotation(pi_rotation);
-  
-  object_transform *= up_transform;
-  object_transform *= pi_rotation_transform;
-  
-  target_pose.position.x = object_transform.getOrigin().getX();
-  target_pose.position.y = object_transform.getOrigin().getY();
-  target_pose.position.z = object_transform.getOrigin().getZ();
-  target_pose.orientation.x = object_transform.getRotation().getX();
-  target_pose.orientation.y = object_transform.getRotation().getY();
-  target_pose.orientation.z = object_transform.getRotation().getZ();
-  target_pose.orientation.w = object_transform.getRotation().getW();
-  
-  return this->moveToCartesianPose(target_pose);
-}
-
-
 bool PegInHole::moveAboveObjectHole(const std::string obj_name, const int hole_nb)
 {
   ROS_INFO_STREAM("Moving above hole "<<hole_nb<<" of object "<<obj_name);
@@ -726,7 +546,6 @@ bool PegInHole::loadHolesLocation(const std::string obj_name)
   return true;
 }
 
-/*
 bool PegInHole::moveAboveEpingle(const std::string obj_name)
 {
   ROS_INFO_STREAM("Moving above "<<obj_name);
@@ -851,4 +670,3 @@ bool PegInHole::moveToPlaque(const std::string obj_name)
   return this->moveToCartesianPose(target_pose);
 }
 
-//*/
