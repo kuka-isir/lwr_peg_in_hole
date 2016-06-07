@@ -35,6 +35,9 @@
 #ifndef SPAWN_HOLES_HPP
 #define SPAWN_HOLES_HPP
 
+#include <ros/ros.h>
+#include <ros/package.h>
+
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit_msgs/CollisionObject.h>
@@ -45,6 +48,7 @@
 #include <shape_msgs/Mesh.h>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 # define M_PI 3.14159265358979323846  /* pi */
 

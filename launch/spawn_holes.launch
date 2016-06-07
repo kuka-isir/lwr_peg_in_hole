@@ -1,5 +1,6 @@
 <launch>
 
+  <arg name="object_name" default="holes_board" />
   <arg name="x" default="0.5" />
   <arg name="y" default="0.0" />
   <arg name="z" default="1.0" />
@@ -8,6 +9,7 @@
   <arg name="Y" default="0.0" />
 
   <node name="spawn_holes_in_scene" pkg="lwr_peg_in_hole" type="spawn_holes" output="screen">
+    <param name="object_name" value="$(arg object_name)" />
     <param name="x_goal" value="$(arg x)" />
     <param name="y_goal" value="$(arg y)" />
     <param name="z_goal" value="$(arg z)" />
@@ -16,8 +18,8 @@
     <param name="yaw" value="$(arg Y)" />
   </node>
   
-  <node name="delete_holes_board" pkg="rosservice" type="rosservice" output="screen" args='call /gazebo/delete_model "model_name: holes_board"' />
-  <node name="spawn_holes_board" pkg="gazebo_ros" type="spawn_model" output="screen" args='-database holes_board -sdf -model holes_board 
+  <node name="delete_holes_in_sim" pkg="rosservice" type="rosservice" output="screen" args='call /gazebo/delete_model "model_name: $(arg object_name)"' />
+  <node name="spawn_holes_in_sim" pkg="gazebo_ros" type="spawn_model" output="screen" args='-database $(arg object_name) -sdf -model $(arg object_name) 
     -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)' />
 
 </launch>

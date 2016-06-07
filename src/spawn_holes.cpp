@@ -8,6 +8,7 @@ int main(int argc, char **argv)
   spinner.start();
 
   double x_goal, y_goal, z_goal, roll, pitch, yaw;
+  std::string object_name;
 
   // Load the planning_scene and make sure we can publish the scene //
   moveit_msgs::PlanningScene planning_scene;
@@ -19,13 +20,30 @@ int main(int argc, char **argv)
     sleep_t.sleep();
   }
 
+  // Check if param object_name is set
+  if(!nh_param.getParam("object_name",object_name)){
+    ROS_ERROR("Param object_name should be set");
+    ros::shutdown();
+    return 1;
+  }
+  
+  // Check if mesh exists
+  std::string path_to_mesh = ros::package::getPath("lwr_peg_in_hole")+"/meshes/"+object_name+".stl";
+  std::ifstream file(path_to_mesh.c_str());
+
+  if (!file){
+    ROS_ERROR_STREAM("Could not find object called "<<object_name);
+    ros::shutdown();
+    return 1;
+  }
+  
   // Define the attached object message //
   moveit_msgs::CollisionObject collision_object;
   collision_object.header.frame_id = "world";
-  collision_object.id = "holes_board";
+  collision_object.id = object_name;
 
   // Define the mesh //
-  shapes::Mesh* m = shapes::createMeshFromResource("package://lwr_peg_in_hole/meshes/holes_board.stl");
+  shapes::Mesh* m = shapes::createMeshFromResource(path_to_mesh);
 
   shape_msgs::Mesh co_mesh;
   shapes::ShapeMsg co_mesh_msg;
@@ -67,4 +85,5 @@ int main(int argc, char **argv)
   planning_scene_diff_publisher.publish(planning_scene);
 
   ros::shutdown();
+  return 0;
 }
