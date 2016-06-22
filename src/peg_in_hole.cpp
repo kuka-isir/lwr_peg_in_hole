@@ -46,7 +46,7 @@ PegInHole::PegInHole() :
   cart_path_srv_req_.link_name = ee_frame_;
   
   // Initialize planning scene monitor
-  tf_.reset(new tf::TransformListener(ros::Duration(2.0)));
+  tf_.reset(new tf::TransformListener(ros::Duration(1.0)));
   planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf_));
   planning_scene_monitor_->startSceneMonitor();
   planning_scene_monitor_->startStateMonitor();
@@ -500,7 +500,7 @@ bool PegInHole::moveAboveObjectHole(const std::string obj_name, const int hole_n
   hole_transform.setRotation(rotation_to_hole);
   
   tf::Transform up_transform;
-  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.18));
+  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.26));
   tf::Quaternion rotation;
   rotation.setRPY(0,0,0);
   up_transform.setRotation(rotation);
