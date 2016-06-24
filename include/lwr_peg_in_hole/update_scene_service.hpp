@@ -75,7 +75,7 @@ class UpdateSceneService
       ROS_INFO("Calling update in scene for object %s with tag %d", object_name.c_str(), tag_id);
       
       // Check if mesh exists
-      std::string path_to_mesh = ros::package::getPath("lwr_peg_in_hole")+"/meshes/"+object_name+"_tag.dae";
+      std::string path_to_mesh = ros::package::getPath("lwr_peg_in_hole")+"/meshes/"+object_name+".stl";
       std::ifstream file(path_to_mesh.c_str());
 
       if (!file){
@@ -117,7 +117,8 @@ class UpdateSceneService
       scale[0] = size;
       scale[1] = size;
       scale[2] = size;
-      shapes::Mesh* m = shapes::createMeshFromResource("package://lwr_peg_in_hole/meshes/"+object_name+"_tag.dae", scale);
+//       shapes::Mesh* m = shapes::createMeshFromResource("package://lwr_peg_in_hole/meshes/"+object_name+".stl", scale);
+      shapes::Mesh* m = shapes::createMeshFromResource("package://lwr_peg_in_hole/meshes/"+object_name+".stl");
 
       shape_msgs::Mesh co_mesh;
       shapes::ShapeMsg co_mesh_msg;
