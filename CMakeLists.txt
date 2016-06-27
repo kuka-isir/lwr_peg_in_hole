@@ -12,10 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  descartes_moveit
-  descartes_trajectory
-  descartes_planner
-  descartes_core
+#  descartes_moveit
+#  descartes_trajectory
+#  descartes_planner
+#  descartes_core
   actionlib
   control_msgs
   message_generation
@@ -141,7 +141,7 @@ add_library(peg_in_hole src/peg_in_hole.cpp)
 ## Declare a C++ executable
 add_executable(spawn_holes src/spawn_holes.cpp)
 add_executable(peg_in_hole_node src/peg_in_hole_node.cpp)
-add_executable(cart_path src/cart_path.cpp)
+#add_executable(cart_path src/cart_path.cpp)
 add_executable(update_scene_service src/update_scene_service.cpp)
 
 ## Add cmake target dependencies of the executable
@@ -149,13 +149,13 @@ add_executable(update_scene_service src/update_scene_service.cpp)
 add_dependencies(spawn_holes ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(peg_in_hole_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(peg_in_hole ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(cart_path ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(cart_path ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(update_scene_service ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(spawn_holes ${catkin_LIBRARIES})
 target_link_libraries(peg_in_hole_node ${catkin_LIBRARIES} peg_in_hole yaml-cpp)
-target_link_libraries(cart_path ${catkin_LIBRARIES})
+#target_link_libraries(cart_path ${catkin_LIBRARIES})
 target_link_libraries(update_scene_service ${catkin_LIBRARIES} yaml-cpp)
 
 #############

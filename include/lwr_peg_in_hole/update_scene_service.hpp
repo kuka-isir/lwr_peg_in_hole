@@ -63,26 +63,26 @@ class UpdateSceneService
         sleep_t.sleep();
       }
       service_server_ = nh_.advertiseService("update_scene", &UpdateSceneService::updateObjectInScene,this);
-      
+
       ROS_INFO("Update_scene service ready !");
     };
 
     bool updateObjectInScene(lwr_peg_in_hole::UpdateSceneService::Request  &req, lwr_peg_in_hole::UpdateSceneService::Response &res){
-      
+
       int tag_id = req.tag_id;
-      std::string object_name = req.object_name, tag_name = "/ar_marker_"+ std::to_string(tag_id);
-      
+      std::string object_name = req.object_name, tag_name = "/ar_marker_"+ boost::to_string(tag_id);
+
       ROS_INFO("Calling update in scene for object %s with tag %d", object_name.c_str(), tag_id);
-      
+
       // Check if mesh exists
-      std::string path_to_mesh = ros::package::getPath("lwr_peg_in_hole")+"/meshes/"+object_name+"_tag.dae";
+      std::string path_to_mesh = ros::package::getPath("lwr_peg_in_hole")+"/meshes/"+object_name+".stl";
       std::ifstream file(path_to_mesh.c_str());
 
       if (!file){
         ROS_ERROR_STREAM("Could not find object called "<<object_name);
         return false;
       }
-      
+
       // Check pose of tag in mesh
       std::string path_to_config = ros::package::getPath("lwr_peg_in_hole")+"/holes/"+object_name+".yaml";
       std::ifstream config(path_to_config.c_str());
@@ -105,19 +105,20 @@ class UpdateSceneService
       tf::Quaternion rotation_to_tag;
       rotation_to_tag.setRPY(tag_pose[3],tag_pose[4],tag_pose[5]);
       tag_transform.setRotation(rotation_to_tag);
-      
+
       // Define the attached object message //
       moveit_msgs::CollisionObject collision_object;
       collision_object.header.frame_id = "world";
       collision_object.id = object_name;
 
       // Define the mesh //
-      double size = 0.0254; 
+      double size = 0.0254;
       Eigen::Vector3d scale;
       scale[0] = size;
       scale[1] = size;
       scale[2] = size;
-      shapes::Mesh* m = shapes::createMeshFromResource("package://lwr_peg_in_hole/meshes/"+object_name+"_tag.dae", scale);
+      // shapes::Mesh* m = shapes::createMeshFromResource("package://lwr_peg_in_hole/meshes/"+object_name+"_tag.dae", scale);
+      shapes::Mesh* m = shapes::createMeshFromResource("package://lwr_peg_in_hole/meshes/"+object_name+".stl");
 
       shape_msgs::Mesh co_mesh;
       shapes::ShapeMsg co_mesh_msg;
@@ -134,10 +135,10 @@ class UpdateSceneService
         ROS_ERROR("%s",ex.what());
         return false;
       }
-      
+
       // Move transform according to the tag's pose
       tform *= tag_transform;
-      
+
       mesh_pose.position.x = tform.getOrigin().x();
       mesh_pose.position.y = tform.getOrigin().y();
       mesh_pose.position.z = tform.getOrigin().z();
@@ -145,7 +146,7 @@ class UpdateSceneService
       mesh_pose.orientation.y = tform.getRotation().y();
       mesh_pose.orientation.z = tform.getRotation().z();
       mesh_pose.orientation.w = tform.getRotation().w();
-      
+
       // Attach object operation /y
       collision_object.meshes.push_back(co_mesh);
       collision_object.mesh_poses.push_back(mesh_pose);
@@ -155,16 +156,16 @@ class UpdateSceneService
       planning_scene_msg_.world.collision_objects.push_back(collision_object);
       planning_scene_msg_.is_diff = true;
       planning_scene_diff_publisher_.publish(planning_scene_msg_);
-      
+
       return true;
     };
-    
+
     ros::NodeHandle nh_;
     ros::ServiceServer service_server_;
     ros::Publisher planning_scene_diff_publisher_;
     moveit_msgs::PlanningScene planning_scene_msg_;
     tf::TransformListener tf_;
-    
+
 };
 
 
