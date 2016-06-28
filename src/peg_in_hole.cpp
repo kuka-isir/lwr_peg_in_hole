@@ -500,7 +500,7 @@ bool PegInHole::moveAboveObjectHole(const std::string obj_name, const int hole_n
   hole_transform.setRotation(rotation_to_hole);
   
   tf::Transform up_transform;
-  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.26));
+  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.32));
   tf::Quaternion rotation;
   rotation.setRPY(0,0,0);
   up_transform.setRotation(rotation);
