@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 #  descartes_planner
 #  descartes_core
   actionlib
+  actionlib_msgs
   control_msgs
   message_generation
 )
@@ -68,11 +69,12 @@ add_service_files(
 )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  FILES
+  ObjectSpawn.action
+  RobotMove.action
+  VisualServoing.action
+)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
@@ -80,6 +82,7 @@ generate_messages(
   geometry_msgs
   std_msgs
   moveit_msgs
+  actionlib_msgs
 )
 
 ################################################
