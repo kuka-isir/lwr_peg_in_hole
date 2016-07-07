@@ -135,6 +135,7 @@ include_directories(
 
 ## Declare a C++ library
 add_library(peg_in_hole src/peg_in_hole.cpp)
+add_library(object_spawn src/object_spawn.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -146,6 +147,7 @@ add_executable(spawn_holes src/spawn_holes.cpp)
 add_executable(peg_in_hole_node src/peg_in_hole_node.cpp)
 #add_executable(cart_path src/cart_path.cpp)
 add_executable(update_scene_service src/update_scene_service.cpp)
+add_executable(object_spawn_action_server src/object_spawn_action_server.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -154,12 +156,16 @@ add_dependencies(peg_in_hole_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 add_dependencies(peg_in_hole ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #add_dependencies(cart_path ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(update_scene_service ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(object_spawn ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(object_spawn_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(spawn_holes ${catkin_LIBRARIES})
 target_link_libraries(peg_in_hole_node ${catkin_LIBRARIES} peg_in_hole yaml-cpp)
 #target_link_libraries(cart_path ${catkin_LIBRARIES})
 target_link_libraries(update_scene_service ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(object_spawn ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(object_spawn_action_server ${catkin_LIBRARIES} object_spawn)
 
 #############
 ## Install ##

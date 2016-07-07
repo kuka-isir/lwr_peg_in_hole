@@ -17,33 +17,36 @@ class Demo1(object):
       self.object_spawn_ac = actionlib.SimpleActionClient('object_spawner', ObjectSpawnAction)
       print "Waiting for action server 'object_spawner' ..."
       self.object_spawn_ac.wait_for_server()
-      print "Found action server 'object_spawner' !"
+      print "Found action server 'object_spawner' !\n"
       
-      self.object_spawn_ac = actionlib.SimpleActionClient('robot_mover', RobotMoveAction)
-      print "Waiting for action server 'robot_mover' ..."
-      self.object_spawn_ac.wait_for_server()
-      print "Found action server 'robot_mover' !"
+      #self.object_spawn_ac = actionlib.SimpleActionClient('robot_mover', RobotMoveAction)
+      #print "Waiting for action server 'robot_mover' ..."
+      #self.object_spawn_ac.wait_for_server()
+      #print "Found action server 'robot_mover' !"
       
-      self.object_spawn_ac = actionlib.SimpleActionClient('visual_servoer', VisualServoingAction)
-      print "Waiting for action server 'visual_servoer' ..."
-      self.object_spawn_ac.wait_for_server()
-      print "Found action server 'visual_servoer' !"
+      #self.object_spawn_ac = actionlib.SimpleActionClient('visual_servoer', VisualServoingAction)
+      #print "Waiting for action server 'visual_servoer' ..."
+      #self.object_spawn_ac.wait_for_server()
+      #print "Found action server 'visual_servoer' !"
+          
+    def spawnObject(self, object_name, tag_id):
+      
+      spawn_object_goal = ObjectSpawnGoal()
+      spawn_object_goal.object_name = object_name
+      spawn_object_goal.tag_id = tag_id
+      
+      print "Sending ObjectSpawn goal:\n", spawn_object_goal, "\n"
+      result = self.object_spawn_ac.send_goal_and_wait(spawn_object_goal)
+      return result == actionlib.GoalStatus.SUCCEEDED
 
-    def run(self):
-      while not rospy.is_shutdown():
-        
-        if True:
-          rospy.sleep(3.0)
-        else:
-          print "Press enter to continue"
-          sys.stdin.readline()
 
 def main():
   rospy.init_node('peg_in_hole_demo1')
   
   demo1 = Demo1()
-  rospy.sleep(2.0)
-  demo1.run()
+  demo1.spawnObject("plaque1", 100)
+  demo1.spawnObject("plaque2", 100)
+  
 
 if __name__ == "__main__":
     main()
