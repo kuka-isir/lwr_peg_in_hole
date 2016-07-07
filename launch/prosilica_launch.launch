@@ -1,6 +1,7 @@
 <launch>
 
   <rosparam param="prosilica_driver/auto_gain">false</rosparam>
+  <rosparam param="prosilica_driver/gain">8</rosparam>
 
   <include file="$(find prosilica_camera)/launch/generic.launch">
     <arg name="camera"       value="prosilica" />
