@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="object_name" default="holes_board" />
+  <arg name="object_name" default="plaque2" />
   <arg name="x" default="0.5" />
   <arg name="y" default="0.0" />
   <arg name="z" default="1.0" />
