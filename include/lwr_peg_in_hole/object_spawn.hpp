@@ -1,5 +1,5 @@
-#ifndef OBJECT_SPAWN_H
-#define OBJECT_SPAWN_H
+#ifndef OBJECT_SPAWN_HPP
+#define OBJECT_SPAWN_HPP
 
 #include <ros/ros.h>
 

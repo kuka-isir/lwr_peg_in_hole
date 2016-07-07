@@ -1,2 +1,5 @@
+float64[] goal_vals
+bool cartesian_goal
 ---
+bool success
 ---
