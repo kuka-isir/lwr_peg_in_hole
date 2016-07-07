@@ -1,7 +1,7 @@
 <launch>
 	<include file="$(find ar_track_alvar)/launch/pr2_indiv_no_kinect.launch">
-		<arg name="cam_image_topic" value="/prosilica/image_raw" />
-		<arg name="cam_info_topic" value="/prosilica/camera_info" />
+		<arg name="cam_image_topic" value="/head_cam/image_raw" />
+		<arg name="cam_info_topic" value="/head_cam/camera_info" />
 		<arg name="output_frame" value="/head_cam_link" />
 		<arg name="marker_size" value="3.0" />
 	</include>
