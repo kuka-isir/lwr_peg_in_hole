@@ -150,6 +150,8 @@ add_executable(peg_in_hole_node src/peg_in_hole_node.cpp)
 add_executable(update_scene_service src/update_scene_service.cpp)
 add_executable(object_spawn_action_server src/object_spawn_action_server.cpp)
 add_executable(robot_move_action_server src/robot_move_action_server.cpp)
+add_executable(robot_move_node src/robot_move_node.cpp)
+add_executable(demo1 src/demo1.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -162,6 +164,8 @@ add_dependencies(object_spawn ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPOR
 add_dependencies(object_spawn_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(robot_move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(robot_move_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(robot_move_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(demo1 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(spawn_holes ${catkin_LIBRARIES})
@@ -171,7 +175,9 @@ target_link_libraries(update_scene_service ${catkin_LIBRARIES} yaml-cpp)
 target_link_libraries(object_spawn ${catkin_LIBRARIES} yaml-cpp)
 target_link_libraries(object_spawn_action_server ${catkin_LIBRARIES} object_spawn)
 target_link_libraries(robot_move ${catkin_LIBRARIES})
-target_link_libraries(robot_move_action_server ${catkin_LIBRARIES} robot_move)
+target_link_libraries(robot_move_action_server ${catkin_LIBRARIES} robot_move yaml-cpp)
+target_link_libraries(robot_move_node ${catkin_LIBRARIES} robot_move yaml-cpp)
+target_link_libraries(demo1 ${catkin_LIBRARIES} robot_move yaml-cpp)
 
 #############
 ## Install ##

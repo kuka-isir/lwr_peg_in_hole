@@ -1,6 +1,7 @@
 #! /usr/bin/python
 import sys
 import yaml
+import time
 import numpy as np
 import actionlib
 import rospy
@@ -56,8 +57,14 @@ class Demo1(object):
     robot_move_goal.goal_vals = joint_position
     
     print "Sending RobotMove goal:\n", robot_move_goal, "\n"
-    result = self.robot_move_ac.send_goal_and_wait(robot_move_goal)
-    return result == actionlib.GoalStatus.SUCCEEDED
+    #result = self.robot_move_ac.send_goal_and_wait(robot_move_goal)
+    self.robot_move_ac.send_goal(robot_move_goal)
+    time.sleep(0.1)
+    self.robot_move_ac.cancel_goal()
+    self.robot_move_ac.stop_tracking_goal()
+    
+    #return result == actionlib.GoalStatus.SUCCEEDED
+    return
 
 
 
@@ -72,8 +79,10 @@ def main():
   start_pose = [1.6002605785960622, -0.0449239937131054, -0.333517572028704, -1.707667848031405, -4.734100141323694e-05, 1.3883824216456677, -0.00020880873042017356]
   demo1.moveToJointPosition(start_pose)
   
-  pose_cart1 = [0.369, 0.078, 1.255, 0.993, 0.110, 0.036, -0.011]
+  pose_cart1 = [0.369, 0.078, 0.410, 0.993, 0.110, 0.036, -0.011]
   demo1.moveToCartesianGoal(pose_cart1)
+  
+  print "Result :\n" ,demo1.robot_move_ac.get_result().success
   
 
 if __name__ == "__main__":

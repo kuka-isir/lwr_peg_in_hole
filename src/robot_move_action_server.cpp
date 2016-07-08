@@ -9,6 +9,8 @@ public:
     nh_(nh), robot_move_(robot_move),
     act_srv_(nh, "robot_mover", boost::bind(&RobotMoveActionServer::executeCB, this, _1), false)
   {
+//     act_srv_.registerGoalCallback();
+    act_srv_.registerPreemptCallback(boost::bind(&RobotMoveActionServer::preemptCB, this));
     act_srv_.start();
   }
 
@@ -36,6 +38,7 @@ protected:
         return;
       }
       if(act_srv_.isPreemptRequested()) {
+        robot_move_.stopJointTrajectory();
         ROS_INFO("Preempting robot move");
         mover_thread.stop();
         return;
@@ -63,6 +66,13 @@ protected:
       robot_move_.moveToJointPosition(goal_vals);
     }
     robot_moved_ = true;
+  }
+  
+  void preemptCB()
+  {
+    ROS_INFO("robot_mover: Preempted");
+    // set the action state to preempted
+    act_srv_.setPreempted();
   }
 
 };

@@ -22,6 +22,8 @@
 #include <moveit_msgs/RobotTrajectory.h>
 #include <moveit_msgs/RobotState.h>
 #include <moveit_msgs/GetCartesianPath.h>
+#include <control_msgs/FollowJointTrajectoryAction.h>
+#include <std_msgs/Bool.h>
 
 #include <geometric_shapes/mesh_operations.h>
 #include <geometric_shapes/shape_operations.h>
@@ -63,6 +65,26 @@ public:
   // The robot tries to go to the (x,y,z) position
   bool moveToCartesianPose(const geometry_msgs::Pose target_pose);
   
+  // Emergency callback
+  void emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg);
+  
+    // The robot tries to go to its home position
+  bool moveToStart();
+  
+  // The robot tries to go to a random target
+  bool moveToRandomTarget();
+  
+  // Look for the object name in the scene and return its collision object
+  moveit_msgs::CollisionObjectPtr getCollisionObject(std::string object_name);
+  
+  // Read yaml file with holes position and save them
+  bool loadHolesLocation(const std::string obj_name);
+  
+  // Move above a specific hole of the specified object
+  bool moveAboveObjectHole(const std::string obj_name, const int hole_nb);
+  
+  
+  
   ros::NodeHandle nh_;
   ros::AsyncSpinner spinner_;
   boost::shared_ptr<tf::TransformListener> tf_;
@@ -75,13 +97,19 @@ public:
   moveit_msgs::GetPositionFK::Request fk_srv_req_;
   moveit_msgs::GetPositionFK::Response fk_srv_resp_;
   
+  actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> controller_ac;
+  
   ros::Publisher attached_object_publisher_, planning_scene_diff_publisher_;
+  ros::Subscriber emerg_stopped_sub_;
   
   moveit_msgs::PlanningScene planning_scene_msg_;
   planning_scene::PlanningScenePtr full_planning_scene_;
   
   std::string base_frame_, ee_frame_, group_name_;
   MoveGroupPlan next_plan_;
+  bool emergency_stopped_;
+  
+  std::vector<std::vector<float> > holes_location_;
   
 };
 

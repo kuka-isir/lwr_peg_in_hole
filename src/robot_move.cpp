@@ -1,7 +1,7 @@
 #include <lwr_peg_in_hole/robot_move.hpp>
 
 RobotMove::RobotMove() : 
-  spinner_(1)
+  spinner_(1), controller_ac("/joint_trajectory_controller/follow_joint_trajectory"), emergency_stopped_(false)
 {
   // Start AsyncSpinner
   spinner_.start();
@@ -52,6 +52,7 @@ RobotMove::RobotMove() :
   // Wait for subscribers to make sure we can publish attached/unattached objects //
   attached_object_publisher_ = nh_.advertise<moveit_msgs::AttachedCollisionObject>("attached_collision_object", 1);
   planning_scene_diff_publisher_ = nh_.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
+  emerg_stopped_sub_ = nh_.subscribe("/robot_emergency_stopped", 1, &RobotMove::emergStoppedCallback,this);
   while(attached_object_publisher_.getNumSubscribers() < 1 || planning_scene_diff_publisher_.getNumSubscribers() < 1)
   {
     ROS_INFO("Waiting for planning scene");
@@ -129,12 +130,49 @@ bool RobotMove::getCurrentJointPosition(std::vector<double> &joints)
 
 bool RobotMove::executeJointTrajectory(const MoveGroupPlan mg_plan)
 {
-  return group_->execute(mg_plan);
+  
+  if (emergency_stopped_) {
+    while (emergency_stopped_) {
+      ROS_WARN("Waiting for emergency stop to be removed");
+      if (!ros::ok()) 
+        return false;
+      ros::Duration(0.3).sleep();
+    }
+  }
+  int num_pts = mg_plan.trajectory_.joint_trajectory.points.size();
+  ROS_INFO("Executing joint trajectory with %d knots and duration %f", num_pts, 
+      mg_plan.trajectory_.joint_trajectory.points[num_pts-1].time_from_start.toSec());
+  
+  // Copy trajectory
+  control_msgs::FollowJointTrajectoryGoal traj_goal;
+  traj_goal.trajectory = mg_plan.trajectory_.joint_trajectory;
+
+  // Ask to execute now
+  traj_goal.trajectory.header.stamp = ros::Time::now()+ros::Duration(0.15); 
+
+  // Specify path and goal tolerance
+  //traj_goal.path_tolerance
+  
+  // Send goal and wait for a result
+  controller_ac.sendGoal(traj_goal);
+  while (ros::ok()) {
+    if (controller_ac.waitForResult(ros::Duration(1.0/30.0))) 
+      break;
+    if (emergency_stopped_) {
+      ROS_WARN("Stopping trajectory!");
+      stopJointTrajectory();
+      ros::Duration(0.5).sleep();
+      return false;
+    }
+  }
+  actionlib::SimpleClientGoalState end_state = controller_ac.getState();
+  return end_state == actionlib::SimpleClientGoalState::SUCCEEDED;
 }
 
 void RobotMove::stopJointTrajectory()
 {
-  group_->stop();
+  ROS_INFO("Stopping joint trajectory");
+  controller_ac.cancelGoal();
 }
 
 bool RobotMove::moveToJointPosition(const std::vector<double> joint_vals)
@@ -163,20 +201,171 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
 //   group_->getCurrentState()->update(true);
   
   // Compute ik
+  ROS_INFO("Computing IK");
   sensor_msgs::JointState joints_ik;
-  if (!compute_ik(pose, joints_ik))
+  if (!compute_ik(pose, joints_ik)){
+    ROS_ERROR("IK fail...");
     return false;
+  }
+  ROS_INFO("IK success!");
 
   // Set joint target
   group_->setJointValueTarget(joints_ik);
 
   // Plan trajectory
-  if (!group_->plan(next_plan_))
+  ROS_INFO("Planning movement");
+  if (!group_->plan(next_plan_)){
+    ROS_ERROR("Plannning fail ...");
     return false;
+  }
+  ROS_INFO("Planning success !");
+  
+  // Execute trajectory
+  ROS_INFO("Executing movement");
+  if (executeJointTrajectory(next_plan_)){
+    ROS_INFO("Execution success !");
+    return true;
+  }
+  else{
+    ROS_ERROR("Executing fail ...");
+    return false;
+  }
+}
+
+void RobotMove::emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  emergency_stopped_ = msg->data;
+}
+
+bool RobotMove::moveToStart()
+{
+  group_->setNamedTarget("start");
+  
+  // Plan trajectory
+  if (!group_->plan(next_plan_)){
+    ROS_INFO("Home position motion planning failed");
+    return false;
+  }
+  ROS_INFO("Home position motion planning successful");
 
   // Execute trajectory
-  if (executeJointTrajectory(next_plan_))
+  if (executeJointTrajectory(next_plan_)) {
+    ROS_INFO("Home position joint trajectory execution successful");
     return true;
-  else
+  }
+  else {
+    ROS_ERROR("Home position joint trajectory execution failed");
     return false;
+  }
+}
+
+bool RobotMove::moveToRandomTarget()
+{
+  group_->setRandomTarget();
+  
+  // Plan trajectory
+  if (!group_->plan(next_plan_)){
+    ROS_INFO("Motion planning to random target failed");
+    return false;
+  }
+  ROS_INFO("Motion planning to random target successful");
+
+  // Execute trajectory
+  if (executeJointTrajectory(next_plan_)) {
+    ROS_INFO("Joint trajectory execution to random target successful");
+    return true;
+  }
+  else {
+    ROS_ERROR("Joint trajectory execution to random target failed");
+    return false;
+  }
+}
+
+moveit_msgs::CollisionObjectPtr RobotMove::getCollisionObject(std::string object_name)
+{
+  // update the planning scene to get the robot's state
+  getPlanningScene(planning_scene_msg_, full_planning_scene_);
+
+  for(int i=0;i<planning_scene_msg_.world.collision_objects.size();i++){
+    if(planning_scene_msg_.world.collision_objects[i].id == object_name){ 
+      return moveit_msgs::CollisionObjectPtr(new moveit_msgs::CollisionObject(planning_scene_msg_.world.collision_objects[i]));
+    }
+  }
+  ROS_ERROR_STREAM("Failed to find object "<< object_name<< " in the scene !!!");
+  return moveit_msgs::CollisionObjectPtr();
+}
+
+bool RobotMove::moveAboveObjectHole(const std::string obj_name, const int hole_nb)
+{
+  ROS_INFO_STREAM("Moving above hole "<<hole_nb<<" of object "<<obj_name);
+  moveit_msgs::CollisionObjectPtr coll_obj = getCollisionObject(obj_name);
+  if (!coll_obj)
+    return false;
+  
+  if (hole_nb >= holes_location_.size()){
+    ROS_ERROR_STREAM("Ask to move to hole #"<<hole_nb<<" but there is only "<<holes_location_.size()<<" holes loaded");
+    return false;
+  }
+
+  geometry_msgs::PoseStamped obj_pose;
+  geometry_msgs::Pose target_pose;
+  obj_pose.header = coll_obj->header;
+  obj_pose.pose = coll_obj->mesh_poses[0];
+  tf_->transformPose(base_frame_, obj_pose, obj_pose);
+  
+  tf::Transform object_transform;
+  object_transform.setOrigin(tf::Vector3(obj_pose.pose.position.x, obj_pose.pose.position.y, obj_pose.pose.position.z));
+  object_transform.setRotation(tf::Quaternion(obj_pose.pose.orientation.x, obj_pose.pose.orientation.y, obj_pose.pose.orientation.z, obj_pose.pose.orientation.w));
+  
+  tf::Transform hole_transform;
+  hole_transform.setOrigin(tf::Vector3(holes_location_[hole_nb][0], holes_location_[hole_nb][1], holes_location_[hole_nb][2]));
+  tf::Quaternion rotation_to_hole;
+  rotation_to_hole.setRPY(holes_location_[hole_nb][3],holes_location_[hole_nb][4],holes_location_[hole_nb][5]);
+  hole_transform.setRotation(rotation_to_hole);
+  
+  tf::Transform up_transform;
+  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.32));
+  tf::Quaternion rotation;
+  rotation.setRPY(0,0,0);
+  up_transform.setRotation(rotation);
+  
+  tf::Transform pi_rotation_transform;
+  pi_rotation_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+  tf::Quaternion pi_rotation;
+  pi_rotation.setRPY(M_PI,0,0);
+  pi_rotation_transform.setRotation(pi_rotation);
+  
+  object_transform *= hole_transform;
+  object_transform *= up_transform;
+  object_transform *= pi_rotation_transform;
+  
+  target_pose.position.x = object_transform.getOrigin().getX();
+  target_pose.position.y = object_transform.getOrigin().getY();
+  target_pose.position.z = object_transform.getOrigin().getZ();
+  target_pose.orientation.x = object_transform.getRotation().getX();
+  target_pose.orientation.y = object_transform.getRotation().getY();
+  target_pose.orientation.z = object_transform.getRotation().getZ();
+  target_pose.orientation.w = object_transform.getRotation().getW();
+  
+  return this->moveToCartesianPose(target_pose);
+}
+
+bool RobotMove::loadHolesLocation(const std::string obj_name)
+{
+  ROS_INFO_STREAM("Loading relative holes locations for "<<obj_name);
+  YAML::Node holes_config = YAML::LoadFile(ros::package::getPath("lwr_peg_in_hole")+"/holes/"+obj_name+".yaml");
+  
+  if (!holes_config["holes"]) {
+    ROS_ERROR("Couldn't read holes location");
+    return false;
+  }
+  YAML::Node poses = holes_config["holes"];  
+  
+  holes_location_.clear();
+  for(unsigned int i =0; i<poses.size(); i++){
+    std::vector<float> pose = poses[i].as<std::vector<float> >();
+    holes_location_.push_back(pose);
+  }
+  
+  return true;
 }
