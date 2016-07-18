@@ -66,6 +66,7 @@ catkin_python_setup()
 add_service_files(
   FILES
   UpdateSceneService.srv
+  EstimateHolesService.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -148,6 +149,7 @@ add_executable(spawn_holes src/spawn_holes.cpp)
 add_executable(peg_in_hole_node src/peg_in_hole_node.cpp)
 #add_executable(cart_path src/cart_path.cpp)
 add_executable(update_scene_service src/update_scene_service.cpp)
+add_executable(estimate_holes_service src/estimate_holes_service.cpp)
 add_executable(object_spawn_action_server src/object_spawn_action_server.cpp)
 add_executable(robot_move_action_server src/robot_move_action_server.cpp)
 add_executable(robot_move_node src/robot_move_node.cpp)
@@ -160,6 +162,7 @@ add_dependencies(peg_in_hole_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 add_dependencies(peg_in_hole ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #add_dependencies(cart_path ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(update_scene_service ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(estimate_holes_service ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(object_spawn ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(object_spawn_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(robot_move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -172,6 +175,7 @@ target_link_libraries(spawn_holes ${catkin_LIBRARIES})
 target_link_libraries(peg_in_hole_node ${catkin_LIBRARIES} peg_in_hole yaml-cpp)
 #target_link_libraries(cart_path ${catkin_LIBRARIES})
 target_link_libraries(update_scene_service ${catkin_LIBRARIES} yaml-cpp)
+target_link_libraries(estimate_holes_service ${catkin_LIBRARIES} yaml-cpp)
 target_link_libraries(object_spawn ${catkin_LIBRARIES} yaml-cpp)
 target_link_libraries(object_spawn_action_server ${catkin_LIBRARIES} object_spawn)
 target_link_libraries(robot_move ${catkin_LIBRARIES})
