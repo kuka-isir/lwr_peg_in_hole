@@ -1,15 +1,15 @@
 <launch>
 
-  <rosparam param="head_cam_driver/auto_gain">false</rosparam>
-  <rosparam param="head_cam_driver/gain">8</rosparam>
+  <rosparam param="head_cam2_driver/auto_gain">false</rosparam>
+  <rosparam param="head_cam2_driver/gain">8</rosparam>
 
   <include file="$(find prosilica_camera)/launch/generic.launch">
-    <arg name="camera"       value="head_cam" />
+    <arg name="camera"       value="head_cam2" />
     <arg name="ip_address"   value="192.168.1.115" />
     <arg name="trigger_mode" value="streaming" />
-    <arg name="frame_id"     value="head_cam_link_optical" />
+    <arg name="frame_id"     value="head_cam2_link_optical" />
   </include>
 
-  <node ns="/head_cam/" name="rect_prosilica" pkg="image_proc" type="image_proc" output="screen" />
+  <node ns="/head_cam2/" name="rect_prosilica" pkg="image_proc" type="image_proc" output="screen" />
 
 </launch>
