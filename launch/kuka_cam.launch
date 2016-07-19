@@ -1,7 +1,10 @@
 <launch>
 
   <rosparam param="head_cam_driver/auto_gain">false</rosparam>
-  <rosparam param="head_cam_driver/gain">8</rosparam>
+  <rosparam param="head_cam_driver/gain">20</rosparam>
+  <rosparam param="head_cam_driver/auto_exposure">false</rosparam>
+  <rosparam param="head_cam_driver/exposure">0.05</rosparam>
+  <rosparam param="head_cam_driver/auto_whitebalance">false</rosparam>
 
   <include file="$(find prosilica_camera)/launch/generic.launch">
     <arg name="camera"       value="head_cam" />
