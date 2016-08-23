@@ -1,7 +1,7 @@
 #include <lwr_peg_in_hole/robot_move.hpp>
 
 RobotMove::RobotMove(bool sim) : 
-  spinner_(1), controller_ac("/joint_trajectory_controller/follow_joint_trajectory"), ptp_ac("PTP"), lin_rel_ac("LIN_REL"), emergency_stopped_(false)
+  spinner_(1), controller_ac("/joint_trajectory_controller/follow_joint_trajectory"), ptp_ac("ptp"), lin_rel_ac("lin_rel"), emergency_stopped_(false)
 {
   sim_ = sim;
   
