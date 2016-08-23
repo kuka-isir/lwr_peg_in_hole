@@ -23,7 +23,7 @@
 #include <moveit_msgs/RobotState.h>
 #include <moveit_msgs/GetCartesianPath.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
-#include <krl_msgs/LIN_RELAction.h>
+#include <krl_msgs/LINAction.h>
 #include <krl_msgs/PTPAction.h>
 #include <std_msgs/Bool.h>
 
@@ -101,7 +101,7 @@ public:
   
   actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> controller_ac;
   actionlib::SimpleActionClient<krl_msgs::PTPAction> ptp_ac;
-  actionlib::SimpleActionClient<krl_msgs::LIN_RELAction> lin_rel_ac;
+  actionlib::SimpleActionClient<krl_msgs::LINAction> lin_ac;
   
   ros::Publisher attached_object_publisher_, planning_scene_diff_publisher_;
   ros::Subscriber emerg_stopped_sub_;

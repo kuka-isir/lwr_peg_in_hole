@@ -1,7 +1,7 @@
 #include <lwr_peg_in_hole/robot_move.hpp>
 
 RobotMove::RobotMove(bool sim) : 
-  spinner_(1), controller_ac("/joint_trajectory_controller/follow_joint_trajectory"), ptp_ac("ptp"), lin_rel_ac("lin_rel"), emergency_stopped_(false)
+  spinner_(1), controller_ac("/joint_trajectory_controller/follow_joint_trajectory"), ptp_ac("ptp"), lin_ac("lin"), emergency_stopped_(false)
 {
   sim_ = sim;
   
@@ -44,7 +44,7 @@ RobotMove::RobotMove(bool sim) :
   
   // Wait for krl action servers to be running
   if (sim_){
-    lin_rel_ac.waitForServer();
+    lin_ac.waitForServer();
     ptp_ac.waitForServer();
   }
   else
@@ -206,6 +206,7 @@ bool RobotMove::moveToJointPosition(const std::vector<double> joint_vals)
   }else{
     std::vector<unsigned char> mask(joint_vals.size(), 1);
     krl_msgs::PTPGoal ptp_goal;
+    ptp_goal.use_relative = false;
     std::vector<float> goal_vals;
     for(int i; i<joint_vals.size();i++)
       goal_vals.push_back(joint_vals[i]);
@@ -268,14 +269,16 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
     }
   }
   else{
-    krl_msgs::LIN_RELGoal lin_goal;
+
+    krl_msgs::LINGoal lin_goal;
+    lin_goal.use_relative = false;
     geometry_msgs::Vector3 xyz, xyz_mask, abc, abc_mask;
     xyz.x = pose.position.x;
     xyz.y = pose.position.y;
     xyz.z = pose.position.z;
     lin_goal.XYZ = xyz;
     xyz_mask.x = 1.0;
-    xyz_mask.y = 1.0;
+    xyz_mask.y = 1.0; 
     xyz_mask.z = 1.0;
     lin_goal.XYZ_mask = xyz_mask;
     tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
@@ -291,17 +294,17 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
     abc_mask.z = 1.0;
     lin_goal.ABC_mask = abc_mask;
     
-    lin_rel_ac.sendGoal(lin_goal);
-    bool finished_before_timeout = lin_rel_ac.waitForResult(ros::Duration(30.0));
+    lin_ac.sendGoal(lin_goal);
+    bool finished_before_timeout = lin_ac.waitForResult(ros::Duration(30.0));
 
     if (finished_before_timeout)
     {
-      actionlib::SimpleClientGoalState state = lin_rel_ac.getState();
-      ROS_INFO("LIN_REL action finished: %s",state.toString().c_str());
+      actionlib::SimpleClientGoalState state = lin_ac.getState();
+      ROS_INFO("LIN action finished: %s",state.toString().c_str());
       return true;
     }
     else{
-      ROS_INFO("LIN_REL action did not finish before the time out.");
+      ROS_INFO("LIN action did not finish before the time out.");
       return false;
     }
   }
