@@ -19,7 +19,8 @@ int main(int argc, char **argv)
   req.tag_id = 100;
 
 
-  RobotMove robot_move;
+  bool sim = false;
+  RobotMove robot_move(sim);
 
   std::cout << "\n \n \n Waiting for input ..... Press ENTER ! \n \n \n ";
   std::cin.ignore();

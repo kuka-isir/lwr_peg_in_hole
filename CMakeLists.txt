@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  krl_msgs
 #  descartes_moveit
 #  descartes_trajectory
 #  descartes_planner

@@ -23,6 +23,8 @@
 #include <moveit_msgs/RobotState.h>
 #include <moveit_msgs/GetCartesianPath.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
+#include <krl_msgs/LIN_RELAction.h>
+#include <krl_msgs/PTPAction.h>
 #include <std_msgs/Bool.h>
 
 #include <geometric_shapes/mesh_operations.h>
@@ -36,7 +38,7 @@ typedef move_group_interface::MoveGroup::Plan MoveGroupPlan;
 class RobotMove
 {
 public:
-  RobotMove();
+  RobotMove(bool sim = false);
   
   // Update local planning scene variables
   void getPlanningScene(moveit_msgs::PlanningScene& planning_scene, planning_scene::PlanningScenePtr& full_planning_scene);
@@ -98,6 +100,8 @@ public:
   moveit_msgs::GetPositionFK::Response fk_srv_resp_;
   
   actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> controller_ac;
+  actionlib::SimpleActionClient<krl_msgs::PTPAction> ptp_ac;
+  actionlib::SimpleActionClient<krl_msgs::LIN_RELAction> lin_rel_ac;
   
   ros::Publisher attached_object_publisher_, planning_scene_diff_publisher_;
   ros::Subscriber emerg_stopped_sub_;
@@ -107,7 +111,7 @@ public:
   
   std::string base_frame_, ee_frame_, group_name_;
   MoveGroupPlan next_plan_;
-  bool emergency_stopped_;
+  bool sim_, emergency_stopped_;
   
   std::vector<std::vector<float> > holes_location_;
   

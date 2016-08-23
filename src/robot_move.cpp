@@ -1,8 +1,10 @@
 #include <lwr_peg_in_hole/robot_move.hpp>
 
-RobotMove::RobotMove() : 
-  spinner_(1), controller_ac("/joint_trajectory_controller/follow_joint_trajectory"), emergency_stopped_(false)
+RobotMove::RobotMove(bool sim) : 
+  spinner_(1), controller_ac("/joint_trajectory_controller/follow_joint_trajectory"), ptp_ac("PTP"), lin_rel_ac("LIN_REL"), emergency_stopped_(false)
 {
+  sim_ = sim;
+  
   // Start AsyncSpinner
   spinner_.start();
   
@@ -39,6 +41,12 @@ RobotMove::RobotMove() :
   planning_scene_monitor_->startSceneMonitor();
   planning_scene_monitor_->startStateMonitor();
   planning_scene_monitor_->startWorldGeometryMonitor();
+  
+  // Wait for krl action servers to be running
+  if (sim_){
+    lin_rel_ac.waitForServer();
+    ptp_ac.waitForServer();
+  }
   
   // Wait until the required ROS services are available
   ik_service_client_ = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
@@ -177,21 +185,46 @@ void RobotMove::stopJointTrajectory()
 
 bool RobotMove::moveToJointPosition(const std::vector<double> joint_vals)
 {
-//   getPlanningScene(planning_scene_msg_, full_planning_scene_);
-//   group_->getCurrentState()->update(true);
-  
-  // Set joint target
-  group_->setJointValueTarget(joint_vals);
+  if (sim_){
+  //   getPlanningScene(planning_scene_msg_, full_planning_scene_);
+  //   group_->getCurrentState()->update(true);
+    
+    // Set joint target
+    group_->setJointValueTarget(joint_vals);
 
-  // Plan trajectory
-  if (!group_->plan(next_plan_))
-    return false;
+    // Plan trajectory
+    if (!group_->plan(next_plan_))
+      return false;
 
-  // Execute trajectory
-  if (executeJointTrajectory(next_plan_))
-    return true;
-  else
-    return false;
+    // Execute trajectory
+    if (executeJointTrajectory(next_plan_))
+      return true;
+    else
+      return false;
+  }else{
+    std::vector<unsigned char> mask(joint_vals.size(), 1);
+    krl_msgs::PTPGoal ptp_goal;
+    std::vector<float> goal_vals;
+    for(int i; i<joint_vals.size();i++)
+      goal_vals.push_back(joint_vals[i]);
+    ptp_goal.ptp_goal_rad = goal_vals;
+    ptp_goal.ptp_mask = mask;
+    ptp_goal.vel_percent = 10;
+    ptp_ac.sendGoal(ptp_goal);
+    bool finished_before_timeout = ptp_ac.waitForResult(ros::Duration(30.0));
+
+    if (finished_before_timeout)
+    {
+      actionlib::SimpleClientGoalState state = ptp_ac.getState();
+      ROS_INFO("PTP action finished: %s",state.toString().c_str());
+      return true;
+    }
+    else{
+      ROS_INFO("PTP action did not finish before the time out.");
+      return false;
+    }
+  }
+    
 }
 
 bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
@@ -200,36 +233,77 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
 //   getPlanningScene(planning_scene_msg_, full_planning_scene_);
 //   group_->getCurrentState()->update(true);
   
-  // Compute ik
-  ROS_INFO("Computing IK");
-  sensor_msgs::JointState joints_ik;
-  if (!compute_ik(pose, joints_ik)){
-    ROS_ERROR("IK fail...");
-    return false;
-  }
-  ROS_INFO("IK success!");
+  if(sim_){
+    // Compute ik
+    ROS_INFO("Computing IK");
+    sensor_msgs::JointState joints_ik;
+    if (!compute_ik(pose, joints_ik)){
+      ROS_ERROR("IK fail...");
+      return false;
+    }
+    ROS_INFO("IK success!");
 
-  // Set joint target
-  group_->setJointValueTarget(joints_ik);
+    // Set joint target
+    group_->setJointValueTarget(joints_ik);
 
-  // Plan trajectory
-  ROS_INFO("Planning movement");
-  if (!group_->plan(next_plan_)){
-    ROS_ERROR("Plannning fail ...");
-    return false;
-  }
-  ROS_INFO("Planning success !");
-  
-  // Execute trajectory
-  ROS_INFO("Executing movement");
-  if (executeJointTrajectory(next_plan_)){
-    ROS_INFO("Execution success !");
-    return true;
+    // Plan trajectory
+    ROS_INFO("Planning movement");
+    if (!group_->plan(next_plan_)){
+      ROS_ERROR("Plannning fail ...");
+      return false;
+    }
+    ROS_INFO("Planning success !");
+    
+    // Execute trajectory
+    ROS_INFO("Executing movement");
+    if (executeJointTrajectory(next_plan_)){
+      ROS_INFO("Execution success !");
+      return true;
+    }
+    else{
+      ROS_ERROR("Executing fail ...");
+      return false;
+    }
   }
   else{
-    ROS_ERROR("Executing fail ...");
-    return false;
+    krl_msgs::LIN_RELGoal lin_goal;
+    geometry_msgs::Vector3 xyz, xyz_mask, abc, abc_mask;
+    xyz.x = pose.position.x;
+    xyz.y = pose.position.y;
+    xyz.z = pose.position.z;
+    lin_goal.XYZ = xyz;
+    xyz_mask.x = 1.0;
+    xyz_mask.y = 1.0;
+    xyz_mask.z = 1.0;
+    lin_goal.XYZ_mask = xyz_mask;
+    tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    abc.x = roll;
+    abc.y = pitch;
+    abc.z = yaw;
+    lin_goal.ABC = abc;
+    abc_mask.x = 1.0;
+    abc_mask.y = 1.0;
+    abc_mask.z = 1.0;
+    lin_goal.ABC_mask = abc_mask;
+    
+    lin_rel_ac.sendGoal(lin_goal);
+    bool finished_before_timeout = lin_rel_ac.waitForResult(ros::Duration(30.0));
+
+    if (finished_before_timeout)
+    {
+      actionlib::SimpleClientGoalState state = lin_rel_ac.getState();
+      ROS_INFO("LIN_REL action finished: %s",state.toString().c_str());
+      return true;
+    }
+    else{
+      ROS_INFO("LIN_REL action did not finish before the time out.");
+      return false;
+    }
   }
+  
 }
 
 void RobotMove::emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg)
