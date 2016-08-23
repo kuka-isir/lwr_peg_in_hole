@@ -47,6 +47,8 @@ RobotMove::RobotMove(bool sim) :
     lin_rel_ac.waitForServer();
     ptp_ac.waitForServer();
   }
+  else
+    controller_ac.waitForServer();
   
   // Wait until the required ROS services are available
   ik_service_client_ = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
@@ -313,23 +315,36 @@ void RobotMove::emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg)
 
 bool RobotMove::moveToStart()
 {
-  group_->setNamedTarget("start");
-  
-  // Plan trajectory
-  if (!group_->plan(next_plan_)){
-    ROS_INFO("Home position motion planning failed");
-    return false;
-  }
-  ROS_INFO("Home position motion planning successful");
+  if(sim_){
+    group_->setNamedTarget("start");
+    
+    // Plan trajectory
+    if (!group_->plan(next_plan_)){
+      ROS_INFO("Home position motion planning failed");
+      return false;
+    }
+    ROS_INFO("Home position motion planning successful");
 
-  // Execute trajectory
-  if (executeJointTrajectory(next_plan_)) {
-    ROS_INFO("Home position joint trajectory execution successful");
-    return true;
+    // Execute trajectory
+    if (executeJointTrajectory(next_plan_)) {
+      ROS_INFO("Home position joint trajectory execution successful");
+      return true;
+    }
+    else {
+      ROS_ERROR("Home position joint trajectory execution failed");
+      return false;
+    }
   }
-  else {
-    ROS_ERROR("Home position joint trajectory execution failed");
-    return false;
+  else{
+    std::vector<double> start;
+    start.push_back(1.6002);
+    start.push_back(-0.0471);
+    start.push_back(-0.3334);
+    start.push_back(-1.6943);
+    start.push_back(0.);
+    start.push_back(1.3884);
+    start.push_back(0.);
+    return moveToJointPosition(start);
   }
 }
 
