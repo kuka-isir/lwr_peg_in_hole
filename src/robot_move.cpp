@@ -304,6 +304,44 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
 
 }
 
+bool RobotMove::moveLinRel(const geometry_msgs::Pose pose)
+{
+
+  if(sim_){
+    return false;
+  }
+  else{
+    krl_msgs::LINGoal lin_goal;
+    lin_goal.use_relative = true;
+    geometry_msgs::Vector3 xyz, rpy;
+    xyz.x = pose.position.x;
+    xyz.y = pose.position.y;
+    xyz.z = pose.position.z;
+    lin_goal.XYZ = xyz;
+    tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+    tf::Matrix3x3 m(q);
+
+    m.getRPY(rpy.x, rpy.y, rpy.z);
+
+    lin_goal.RPY = rpy;
+
+    lin_ac.sendGoal(lin_goal);
+    bool finished_before_timeout = lin_ac.waitForResult(ros::Duration(30.0));
+
+    if (finished_before_timeout)
+    {
+      actionlib::SimpleClientGoalState state = lin_ac.getState();
+      ROS_INFO("LIN action finished: %s",state.toString().c_str());
+      return true;
+    }
+    else{
+      ROS_INFO("LIN action did not finish before the time out.");
+      return false;
+    }
+  }
+
+}
+
 void RobotMove::emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg)
 {
   emergency_stopped_ = msg->data;

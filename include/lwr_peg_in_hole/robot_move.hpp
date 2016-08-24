@@ -67,6 +67,9 @@ public:
   // The robot tries to go to the (x,y,z) position
   bool moveToCartesianPose(const geometry_msgs::Pose target_pose);
   
+  // Relative linear movement
+  bool moveLinRel(const geometry_msgs::Pose pose);
+  
   // Emergency callback
   void emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg);
   

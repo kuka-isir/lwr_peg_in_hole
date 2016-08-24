@@ -78,6 +78,13 @@ int main(int argc, char **argv)
     test_pose.orientation.w = -0.418;
 
     while(!robot_move.moveToCartesianPose(test_pose) && ros::ok()){usleep(1E6);}
+    
+    while(!robot_move.moveToStart() && ros::ok()){usleep(1E6);}
+    
+    geometry_msgs::Pose test_lin_rel;
+    test_lin_rel.orientation.w = 1.0;
+    test_lin_rel.position.z = 0.1;
+    while(!robot_move.moveLinRel(test_lin_rel) && ros::ok()){usleep(1E6);}
 
     usleep(1E6);
 
