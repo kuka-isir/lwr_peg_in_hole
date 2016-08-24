@@ -272,15 +272,11 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
 
     krl_msgs::LINGoal lin_goal;
     lin_goal.use_relative = false;
-    geometry_msgs::Vector3 xyz, xyz_mask, abc, abc_mask;
+    geometry_msgs::Vector3 xyz, abc;
     xyz.x = pose.position.x;
     xyz.y = pose.position.y;
     xyz.z = pose.position.z;
     lin_goal.XYZ = xyz;
-    xyz_mask.x = 1.0;
-    xyz_mask.y = 1.0; 
-    xyz_mask.z = 1.0;
-    lin_goal.XYZ_mask = xyz_mask;
     tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
     tf::Matrix3x3 m(q);
     double roll, pitch, yaw;
@@ -289,10 +285,6 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
     abc.y = pitch;
     abc.z = yaw;
     lin_goal.ABC = abc;
-    abc_mask.x = 1.0;
-    abc_mask.y = 1.0;
-    abc_mask.z = 1.0;
-    lin_goal.ABC_mask = abc_mask;
     
     lin_ac.sendGoal(lin_goal);
     bool finished_before_timeout = lin_ac.waitForResult(ros::Duration(30.0));
