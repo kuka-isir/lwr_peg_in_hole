@@ -156,6 +156,7 @@ add_executable(robot_move_action_server src/robot_move_action_server.cpp)
 add_executable(robot_move_node src/robot_move_node.cpp)
 add_executable(demo1 src/demo1.cpp)
 add_executable(demo0 src/demo0.cpp)
+add_executable(demo_lin src/demo_lin.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -186,6 +187,7 @@ target_link_libraries(robot_move_action_server ${catkin_LIBRARIES} robot_move ya
 target_link_libraries(robot_move_node ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(demo1 ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(demo0 ${catkin_LIBRARIES} robot_move yaml-cpp)
+target_link_libraries(demo_lin ${catkin_LIBRARIES} robot_move yaml-cpp)
 
 #############
 ## Install ##

@@ -41,30 +41,7 @@ int main(int argc, char **argv)
 
 
   while(ros::ok()){
-    std::cout << "2) Move to start";
-    while(!robot_move.moveToStart() && ros::ok())
-    {
-      usleep(1E6);
-    }
-    std::cout << "...done" << std::endl;
 
-    std::cout << "3) Move to first_fastener";
-    while(!robot_move.moveToJointPosition(first_fastener) && ros::ok())
-    {
-        usleep(1E6);
-    }
-    std::cout << "...done" << std::endl;
-
-    usleep(1E6);
-
-    while(!robot_move.moveToStart() && ros::ok())
-    {
-      usleep(1E6);
-    }
-
-    while(!robot_move.moveToJointPosition(second_fastener) && ros::ok()){usleep(1E6);}
-
-    usleep(1E6);
 
     while(!robot_move.moveToStart() && ros::ok()){usleep(1E6);}
 
@@ -77,13 +54,15 @@ int main(int argc, char **argv)
     test_pose.orientation.z = -0.236;
     test_pose.orientation.w = -0.418;
 
-    while(!robot_move.moveToCartesianPose(test_pose) && ros::ok()){usleep(1E6);}
-    
+
+    // while(!robot_move.moveToCartesianPose(test_pose) && ros::ok()){usleep(1E6);}
+
     while(!robot_move.moveToStart() && ros::ok()){usleep(1E6);}
-    
+
     geometry_msgs::Pose test_lin_rel;
     test_lin_rel.orientation.w = 1.0;
     test_lin_rel.position.z = 0.1;
+    std::cout << "Sending LIN_REL : "<<test_lin_rel<< std::endl;
     while(!robot_move.moveLinRel(test_lin_rel) && ros::ok()){usleep(1E6);}
 
     usleep(1E6);
