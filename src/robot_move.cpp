@@ -209,13 +209,18 @@ bool RobotMove::moveToJointPosition(const std::vector<double> joint_vals)
   }else{
     std::vector<unsigned char> mask(joint_vals.size(), 1);
     krl_msgs::PTPGoal ptp_goal;
-    ptp_goal.use_relative = false;
+
     std::vector<float> goal_vals;
     for(int i; i<joint_vals.size();i++)
       goal_vals.push_back(joint_vals[i]);
-    ptp_goal.ptp_goal_rad = goal_vals;
+
+    ptp_goal.ptp_goal = goal_vals;
+    ptp_goal.ptp_input_type = krl_msgs::PTPGoal::Joint;
     ptp_goal.ptp_mask = mask;
     ptp_goal.vel_percent = 10;
+    ptp_goal.use_radians = true;
+    ptp_goal.use_relative = false;
+
     ptp_ac.sendGoal(ptp_goal);
     bool finished_before_timeout = ptp_ac.waitForResult(ros::Duration(30.0));
 
@@ -298,6 +303,51 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
     }
     else{
       ROS_INFO("LIN action did not finish before the time out.");
+      return false;
+    }
+  }
+
+}
+bool RobotMove::moveToCartesianPoseUsingPTP(const geometry_msgs::Pose pose)
+{
+
+//   getPlanningScene(planning_scene_msg_, full_planning_scene_);
+//   group_->getCurrentState()->update(true);
+
+  if(sim_){
+    return moveToCartesianPose(pose);
+  }else{
+
+    krl_msgs::PTPGoal ptp_goal;
+
+    geometry_msgs::Vector3 xyz, rpy;
+    xyz.x = pose.position.x;
+    xyz.y = pose.position.y;
+    xyz.z = pose.position.z;
+
+    tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+    tf::Matrix3x3 m(q);
+
+    m.getRPY(rpy.x, rpy.y, rpy.z);
+
+    ptp_goal.XYZ = xyz;
+    ptp_goal.RPY = rpy;
+    ptp_goal.ptp_input_type = krl_msgs::PTPGoal::Cartesian;
+    ptp_goal.vel_percent = 10;
+    ptp_goal.use_radians = true;
+    ptp_goal.use_relative = false;
+
+    ptp_ac.sendGoal(ptp_goal);
+    bool finished_before_timeout = ptp_ac.waitForResult(ros::Duration(30.0));
+
+    if (finished_before_timeout)
+    {
+      actionlib::SimpleClientGoalState state = ptp_ac.getState();
+      ROS_INFO("PTP action finished: %s",state.toString().c_str());
+      return true;
+    }
+    else{
+      ROS_INFO("PTP action did not finish before the time out.");
       return false;
     }
   }

@@ -39,57 +39,60 @@ class RobotMove
 {
 public:
   RobotMove(bool sim = false);
-  
+
   // Update local planning scene variables
   void getPlanningScene(moveit_msgs::PlanningScene& planning_scene, planning_scene::PlanningScenePtr& full_planning_scene);
-  
+
   // Compute FK
   bool compute_fk(const sensor_msgs::JointState joints, geometry_msgs::Pose &pose);
-  
+
   // Compute IK
   bool compute_ik(const geometry_msgs::Pose pose, sensor_msgs::JointState &joints);
-  
+
   // Get current cartesian pose
   bool getCurrentCartesianPose(geometry_msgs::Pose &pose, std::string target_frame = "");
-  
+
   // Get current joint state
   bool getCurrentJointPosition(std::vector<double> &joints);
-  
+
   // Execute a joint trajectory
   bool executeJointTrajectory(const MoveGroupPlan mg_plan);
-  
+
   // Stop current joint trajectory
   void stopJointTrajectory();
-  
+
   // The robot tries to go to the passed joint values
   bool moveToJointPosition(const std::vector<double> target_joints);
-  
+
   // The robot tries to go to the (x,y,z) position
   bool moveToCartesianPose(const geometry_msgs::Pose target_pose);
-  
+
+  // The robot tries to go to the (x,y,z) position
+  bool moveToCartesianPoseUsingPTP(const geometry_msgs::Pose target_pose); 
+
   // Relative linear movement
   bool moveLinRel(const geometry_msgs::Pose pose);
-  
+
   // Emergency callback
   void emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg);
-  
+
     // The robot tries to go to its home position
   bool moveToStart();
-  
+
   // The robot tries to go to a random target
   bool moveToRandomTarget();
-  
+
   // Look for the object name in the scene and return its collision object
   moveit_msgs::CollisionObjectPtr getCollisionObject(std::string object_name);
-  
+
   // Read yaml file with holes position and save them
   bool loadHolesLocation(const std::string obj_name);
-  
+
   // Move above a specific hole of the specified object
   bool moveAboveObjectHole(const std::string obj_name, const int hole_nb);
-  
-  
-  
+
+
+
   ros::NodeHandle nh_;
   ros::AsyncSpinner spinner_;
   boost::shared_ptr<tf::TransformListener> tf_;
@@ -101,23 +104,23 @@ public:
   moveit_msgs::GetPositionIK::Response ik_srv_resp_;
   moveit_msgs::GetPositionFK::Request fk_srv_req_;
   moveit_msgs::GetPositionFK::Response fk_srv_resp_;
-  
+
   actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> controller_ac;
   actionlib::SimpleActionClient<krl_msgs::PTPAction> ptp_ac;
   actionlib::SimpleActionClient<krl_msgs::LINAction> lin_ac;
-  
+
   ros::Publisher attached_object_publisher_, planning_scene_diff_publisher_;
   ros::Subscriber emerg_stopped_sub_;
-  
+
   moveit_msgs::PlanningScene planning_scene_msg_;
   planning_scene::PlanningScenePtr full_planning_scene_;
-  
+
   std::string base_frame_, ee_frame_, group_name_;
   MoveGroupPlan next_plan_;
   bool sim_, emergency_stopped_;
-  
+
   std::vector<std::vector<float> > holes_location_;
-  
+
 };
 
 #endif
