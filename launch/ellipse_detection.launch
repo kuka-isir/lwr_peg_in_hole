@@ -1,0 +1,19 @@
+<launch>
+
+  <arg name="img_in" default="/head_cam/image_rect_color" />
+  <arg name="contour_min_pix_size" default="50" />
+  <arg name="ellipse_max_ratio" default="0.8" />  <!-- between 0 and 1 -->
+  <arg name="hole_radius" default="0.0035" />
+  <arg name="holes_min_spacing" default="1" />  <!-- in pixels -->
+  <arg name="debug" default="false" />
+
+  <node name="ellipse_detection" pkg="lwr_peg_in_hole" type="ellipse_detection" output="screen">
+    <param name="img_in" value="$(arg img_in)" />
+    <param name="contour_min_pix_size" value="$(arg contour_min_pix_size)" />
+    <param name="ellipse_max_ratio" value="$(arg ellipse_max_ratio)" />
+    <param name="hole_radius" value="$(arg hole_radius)" />
+    <param name="holes_min_spacing" value="$(arg holes_min_spacing)" />
+    <param name="debug" value="$(arg debug)" />
+  </node>
+
+</launch>

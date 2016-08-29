@@ -20,6 +20,11 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib
   actionlib_msgs
   control_msgs
+  cv_bridge
+  image_geometry
+  image_transport
+  tf
+  tf_conversions
   message_generation
 )
 
@@ -157,6 +162,7 @@ add_executable(robot_move_node src/robot_move_node.cpp)
 add_executable(demo1 src/demo1.cpp)
 add_executable(demo0 src/demo0.cpp)
 add_executable(demo_lin src/demo_lin.cpp)
+add_executable(ellipse_detection src/ellipse_detection.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -173,6 +179,7 @@ add_dependencies(robot_move_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${
 add_dependencies(robot_move_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(demo1 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(demo0 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ellipse_detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(spawn_holes ${catkin_LIBRARIES})
@@ -188,6 +195,7 @@ target_link_libraries(robot_move_node ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(demo1 ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(demo0 ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(demo_lin ${catkin_LIBRARIES} robot_move yaml-cpp)
+target_link_libraries(ellipse_detection ${catkin_LIBRARIES} )
 
 #############
 ## Install ##
