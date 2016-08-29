@@ -105,13 +105,13 @@ void callback(const sensor_msgs::Image::ConstPtr& image_msg, const sensor_msgs::
     if (holes_pose.size() > 0){
       geometry_msgs::PoseStamped pose_in, pose_converted;
       try{
-        tf_listener_->waitForTransform(cam_info->header.frame_id, "base_link", ros::Time(0.0), ros::Duration(1.0));
+        tf_listener_->waitForTransform(cam_info->header.frame_id, base_frame_, ros::Time(0.0), ros::Duration(1.0));
         pose_in.header.frame_id = cam_info->header.frame_id;
 //         pose_in.header.stamp = ros::Time(0.0);
         pose_in.pose = holes_pose[0];
-        tf_listener_->transformPose("base_link", pose_in, pose_converted);
+        tf_listener_->transformPose(base_frame_, pose_in, pose_converted);
         pose_in.pose = holes_pose[1];
-        tf_listener_->transformPose("base_link", pose_in, pose_converted);
+        tf_listener_->transformPose(base_frame_, pose_in, pose_converted);
       }
       catch (tf::TransformException ex){
         ROS_ERROR("%s",ex.what());
@@ -123,7 +123,7 @@ void callback(const sensor_msgs::Image::ConstPtr& image_msg, const sensor_msgs::
       }
       if (i==0){
         geometry_msgs::PoseStamped pose_stmp;
-        pose_stmp.header.frame_id = "base_link";
+        pose_stmp.header.frame_id = base_frame_;
         pose_stmp.pose = pose_converted.pose;
         pose_pub_.publish(pose_stmp);
       }
@@ -276,6 +276,7 @@ int main(int argc, char **argv)
   params_loaded *= nh_priv.getParam("hole_radius",hole_radius_);
   params_loaded *= nh_priv.getParam("holes_min_spacing",holes_min_spacing_);
   params_loaded *= nh_priv.getParam("debug",debug_);
+  params_loaded *= nh_priv.getParam("base_frame",base_frame_);
   if(!params_loaded){
     ROS_ERROR("Couldn't find all the required parameters. Closing...");
     return -1;
