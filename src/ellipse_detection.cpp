@@ -140,6 +140,12 @@ void callback(const sensor_msgs::Image::ConstPtr& image_msg, const sensor_msgs::
 
 std::vector<geometry_msgs::Pose> ellipse_to_pose(cv::RotatedRect ellipse, sensor_msgs::CameraInfo camera_info, double radius){
   
+//    * Copyright (c) 2014 Markus Bader <markus.bader@tuwien.ac.at>
+//    * All rights reserved.
+//   Got from v4r_ellipses ROS package under BSD licence
+//   Method was coded following this paper:
+//   http://link.springer.com/chapter/10.1007/978-3-540-24672-5_41
+  
   std::vector<geometry_msgs::Pose> poses;
   cv::Mat_<double> Q, EigenVal, EigenVect;
   
