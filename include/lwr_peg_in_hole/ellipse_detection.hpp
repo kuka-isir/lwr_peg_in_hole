@@ -61,7 +61,7 @@ std::vector<geometry_msgs::Pose> ellipse_to_pose(cv::RotatedRect ellipse, sensor
 // Global variables
 ros::Publisher pose_pub_;
 tf::TransformListener* tf_listener_;
-std::string img_in_topic_, base_frame_;
+std::string img_in_topic_, base_frame_, out_pose_topic_;
 int contour_min_pix_size_;
 double ellipse_max_ratio_, hole_radius_, holes_min_spacing_;
 bool debug_;

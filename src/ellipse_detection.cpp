@@ -277,6 +277,7 @@ int main(int argc, char **argv)
   params_loaded *= nh_priv.getParam("holes_min_spacing",holes_min_spacing_);
   params_loaded *= nh_priv.getParam("debug",debug_);
   params_loaded *= nh_priv.getParam("base_frame",base_frame_);
+  params_loaded *= nh_priv.getParam("out_pose_topic",out_pose_topic_);
   if(!params_loaded){
     ROS_ERROR("Couldn't find all the required parameters. Closing...");
     return -1;
@@ -286,7 +287,7 @@ int main(int argc, char **argv)
   image_transport::ImageTransport image_transport_(nh);
   image_transport::CameraSubscriber depth_sub_ = image_transport_.subscribeCamera(img_in_topic_, 1, callback);
   
-  pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>("hole_pose", 1);
+  pose_pub_ = nh.advertise<geometry_msgs::PoseStamped>(out_pose_topic_, 1);
   
   // OpenCV windows 
   if(debug_){

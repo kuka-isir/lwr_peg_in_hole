@@ -7,6 +7,7 @@
   <arg name="holes_min_spacing" default="1" />  <!-- in pixels -->
   <arg name="debug" default="false" />
   <arg name="base_frame" default="base_link" />
+  <arg name="out_pose_topic" default="hole_position" />
 
   <node name="ellipse_detection" pkg="lwr_peg_in_hole" type="ellipse_detection" output="screen">
     <param name="img_in" value="$(arg img_in)" />
@@ -16,6 +17,7 @@
     <param name="holes_min_spacing" value="$(arg holes_min_spacing)" />
     <param name="debug" value="$(arg debug)" />
     <param name="base_frame" value="$(arg base_frame)" />
+    <param name="out_pose_topic" value="$(arg out_pose_topic)" />
   </node>
 
 </launch>
