@@ -73,6 +73,7 @@ add_service_files(
   FILES
   UpdateSceneService.srv
   EstimateHolesService.srv
+  FindHolePoseService.srv
 )
 
 ## Generate actions in the 'action' folder
