@@ -68,6 +68,8 @@ class FindHolePoseService
       nh_.param<double>("hole_radius", hole_radius_, 0.0035);
       nh_.param<double>("holes_min_spacing", holes_min_spacing_, 1.0);
       nh_.param<std::string>("base_frame", base_frame_, "base_link");
+      nh_.param<double>("max_dist", max_dist_, 0.01);
+      nh_.param<double>("max_angle_dist", max_angle_dist_, 0.1);
       nh_.param<bool>("debug", debug_, true);
 
       // OpenCV windows 
@@ -193,15 +195,17 @@ class FindHolePoseService
         std::cout << final_ellipses.size() << " ellipses remaining !!!!" << std::endl;
       
       /** Printing ellipses on the image **/
-      cv::RNG rng(12345);
-//       cv_bridge::CvImagePtr cv_image_orig = cv_bridge::toCvCopy(current_image_->image);
-      for(int i = 0; i < final_ellipses.size() ; i++){
-        cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-        cv::ellipse(current_orig_img_->image,final_ellipses[i], color, 1, 8);
+      if(debug_){
+        cv::RNG rng(12345);
+        for(int i = 0; i < final_ellipses.size() ; i++){
+          cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+          cv::ellipse(current_orig_img_->image,final_ellipses[i], color, 1, 8);
+        }
+        cv::imshow("Ellipse detection", current_orig_img_->image);
       }
-      cv::imshow("Ellipse detection", current_orig_img_->image);
       
-      /** Convert the ellipse 2D to a circle 3D **/
+      /** Convert the ellipse 2D to a circle 3D pose **/
+      std::vector<geometry_msgs::PoseStamped> ellipses_pose1, ellipses_pose2;
       for(int i = 0; i< final_ellipses.size() ; i++){
         std::vector<geometry_msgs::Pose> holes_pose = ellipse_to_pose(final_ellipses[i], current_cam_info_, hole_radius_);
         if (holes_pose.size() > 0){
@@ -212,35 +216,91 @@ class FindHolePoseService
     //         pose_in.header.stamp = ros::Time(0.0);
             pose_in.pose = holes_pose[0];
             tf_listener_->transformPose(base_frame_, pose_in, pose_converted);
+            ellipses_pose1.push_back(pose_in);
             pose_in.pose = holes_pose[1];
             tf_listener_->transformPose(base_frame_, pose_in, pose_converted);
+            ellipses_pose2.push_back(pose_in);
           }
           catch (tf::TransformException ex){
             ROS_ERROR("%s",ex.what());
             return false;
           }
-          if (debug_){
-            for(int i = 0; i < holes_pose.size() ; i++)
-              std::cout << "Position is : ("<<pose_converted.pose.position.x<<","<<pose_converted.pose.position.y<<","<<pose_converted.pose.position.z<<")"<<std::endl;
-          }
-          if (i==0){
-            geometry_msgs::PoseStamped pose_stmp;
-            pose_stmp.header.frame_id = base_frame_;
-            pose_stmp.pose = pose_converted.pose;
-            pose_pub_.publish(pose_stmp);
-          }
         }
       }
+    
+      /** Compare the positions to the estimation and keep the closest **/
+      int closest_hole = -1;
+      double closest_dist = -1.0, current_dist;
+      tf::Transform tf_estimate, tf_computed, tf_diff;
+      tf_estimate.setOrigin(tf::Vector3(req.hole_pose_estimate.position.x, req.hole_pose_estimate.position.y, req.hole_pose_estimate.position.z));
+      tf_estimate.setRotation(tf::Quaternion(req.hole_pose_estimate.orientation.x, req.hole_pose_estimate.orientation.y, req.hole_pose_estimate.orientation.z, req.hole_pose_estimate.orientation.w));
+      for(int i=0; i<ellipses_pose1.size(); i++){
+        
+        tf_computed.setOrigin(tf::Vector3(ellipses_pose1[i].pose.position.x, ellipses_pose1[i].pose.position.y, ellipses_pose1[i].pose.position.z));
+        tf_computed.setRotation(tf::Quaternion(ellipses_pose1[i].pose.orientation.x, ellipses_pose1[i].pose.orientation.y, ellipses_pose1[i].pose.orientation.z, ellipses_pose1[i].pose.orientation.w));
+        
+        tf_diff = tf_estimate.inverseTimes(tf_computed);
+        
+        current_dist = sqrt( pow(tf_diff.getOrigin().getX(),2) + pow(tf_diff.getOrigin().getY(),2) + pow(tf_diff.getOrigin().getZ(),2) );
+        if(current_dist < closest_dist){
+          closest_dist = current_dist;
+          closest_hole = i;
+        }
+        
+      }
       
-      /** TODO Compare the poses to the estimation **/
       
-      /** TODO Keep the closest, if close enough...or discard **/
+      /** Check if closest is close enough **/
+      if(closest_dist > max_dist_)
+        return false;  
       
+      
+      double roll, pitch, yaw, orientation_dist1, orientation_dist2, closest_orientation;
+      
+      tf_computed.setOrigin(tf::Vector3(ellipses_pose1[closest_hole].pose.position.x, ellipses_pose1[closest_hole].pose.position.y, ellipses_pose1[closest_hole].pose.position.z));
+      tf_computed.setRotation(tf::Quaternion(ellipses_pose1[closest_hole].pose.orientation.x, ellipses_pose1[closest_hole].pose.orientation.y, ellipses_pose1[closest_hole].pose.orientation.z, ellipses_pose1[closest_hole].pose.orientation.w));        
+      tf_diff = tf_estimate.inverseTimes(tf_computed);
+      tf::Matrix3x3 m(tf_diff.getRotation());
+      m.getRPY(roll, pitch, yaw);
+      orientation_dist1 = sqrt( pow(roll,2) + pow(pitch,2) + pow(yaw,2) );
+
+      tf_computed.setOrigin(tf::Vector3(ellipses_pose2[closest_hole].pose.position.x, ellipses_pose2[closest_hole].pose.position.y, ellipses_pose2[closest_hole].pose.position.z));
+      tf_computed.setRotation(tf::Quaternion(ellipses_pose2[closest_hole].pose.orientation.x, ellipses_pose2[closest_hole].pose.orientation.y, ellipses_pose2[closest_hole].pose.orientation.z, ellipses_pose2[closest_hole].pose.orientation.w));        
+      tf_diff = tf_estimate.inverseTimes(tf_computed);
+      tf::Matrix3x3 m2(tf_diff.getRotation());
+      m2.getRPY(roll, pitch, yaw);
+      orientation_dist2 = sqrt( pow(roll,2) + pow(pitch,2) + pow(yaw,2) );
+      
+      if (std::min(orientation_dist1,orientation_dist2) < max_angle_dist_){
+        
+        if(orientation_dist1 < orientation_dist2){
+          req.hole_pose_estimate.position.x = ellipses_pose1[closest_hole].pose.position.x;
+          req.hole_pose_estimate.position.y = ellipses_pose1[closest_hole].pose.position.y;
+          req.hole_pose_estimate.position.z = ellipses_pose1[closest_hole].pose.position.z;
+          req.hole_pose_estimate.orientation.x = ellipses_pose1[closest_hole].pose.orientation.x;
+          req.hole_pose_estimate.orientation.y = ellipses_pose1[closest_hole].pose.orientation.y;
+          req.hole_pose_estimate.orientation.z = ellipses_pose1[closest_hole].pose.orientation.z;
+          req.hole_pose_estimate.orientation.w = ellipses_pose1[closest_hole].pose.orientation.w;
+        }else{
+          req.hole_pose_estimate.position.x = ellipses_pose2[closest_hole].pose.position.x;
+          req.hole_pose_estimate.position.y = ellipses_pose2[closest_hole].pose.position.y;
+          req.hole_pose_estimate.position.z = ellipses_pose2[closest_hole].pose.position.z;
+          req.hole_pose_estimate.orientation.x = ellipses_pose2[closest_hole].pose.orientation.x;
+          req.hole_pose_estimate.orientation.y = ellipses_pose2[closest_hole].pose.orientation.y;
+          req.hole_pose_estimate.orientation.z = ellipses_pose2[closest_hole].pose.orientation.z;
+          req.hole_pose_estimate.orientation.w = ellipses_pose2[closest_hole].pose.orientation.w;
+        }
+        
+      }else{
+        return false;
+      }
+
       // Starting over callback on image
-      locking_data_ = false;
-      if (debug_)
-        cv::waitKey(10);
-      return true;
+        locking_data_ = false;
+        if (debug_)
+          cv::waitKey(10);
+        return true;
+      
     }
 
     std::vector<geometry_msgs::Pose> ellipse_to_pose(cv::RotatedRect ellipse, sensor_msgs::CameraInfo camera_info, double radius){
@@ -380,11 +440,10 @@ class FindHolePoseService
     image_transport::CameraSubscriber img_sub_;
     cv_bridge::CvImagePtr current_image_, current_orig_img_;
     sensor_msgs::CameraInfo current_cam_info_;
-    ros::Publisher pose_pub_;
     tf::TransformListener* tf_listener_;
     std::string img_in_topic_, base_frame_;
     int contour_min_pix_size_;
-    double ellipse_max_ratio_, hole_radius_, holes_min_spacing_;
+    double ellipse_max_ratio_, hole_radius_, holes_min_spacing_, max_dist_, max_angle_dist_;
     bool debug_, locking_data_;
 
 };
