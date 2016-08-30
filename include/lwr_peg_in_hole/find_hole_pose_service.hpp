@@ -68,8 +68,8 @@ class FindHolePoseService
       nh_.param<double>("hole_radius", hole_radius_, 0.0035);
       nh_.param<double>("holes_min_spacing", holes_min_spacing_, 1.0);
       nh_.param<std::string>("base_frame", base_frame_, "base_link");
-      nh_.param<double>("max_dist", max_dist_, 0.01);
-      nh_.param<double>("max_angle_dist", max_angle_dist_, 0.1);
+      nh_.param<double>("max_dist", max_dist_, 1000);
+      nh_.param<double>("max_angle_dist", max_angle_dist_, 1000);
       nh_.param<bool>("debug", debug_, true);
 
       // OpenCV windows 
@@ -221,13 +221,13 @@ class FindHolePoseService
           try{
             tf_listener_->waitForTransform(current_cam_info_.header.frame_id, base_frame_, ros::Time(0.0), ros::Duration(1.0));
             pose_in.header.frame_id = current_cam_info_.header.frame_id;
-    //         pose_in.header.stamp = ros::Time(0.0);
             pose_in.pose = holes_pose[0];
             tf_listener_->transformPose(base_frame_, pose_in, pose_converted);
-            ellipses_pose1.push_back(pose_in);
+            
+            ellipses_pose1.push_back(pose_converted);
             pose_in.pose = holes_pose[1];
             tf_listener_->transformPose(base_frame_, pose_in, pose_converted);
-            ellipses_pose2.push_back(pose_in);
+            ellipses_pose2.push_back(pose_converted);
           }
           catch (tf::TransformException ex){
             ROS_ERROR("%s",ex.what());
@@ -253,16 +253,16 @@ class FindHolePoseService
         tf_diff = tf_estimate.inverseTimes(tf_computed);
         
         current_dist = sqrt( pow(tf_diff.getOrigin().getX(),2) + pow(tf_diff.getOrigin().getY(),2) + pow(tf_diff.getOrigin().getZ(),2) );
-        if(current_dist < closest_dist){
+        
+        if((current_dist < closest_dist) || (closest_dist < 0) ){
           closest_dist = current_dist;
           closest_hole = i;
         }
         
       }
       
-      
       /** Check if closest is close enough **/
-      if(closest_dist > max_dist_){
+      if((closest_dist > max_dist_) || (closest_hole < 0)){
         if (debug_){
           ROS_ERROR("There is no holes close enough to the estimate");
           cv::waitKey(10);
@@ -290,21 +290,21 @@ class FindHolePoseService
       if (std::min(orientation_dist1,orientation_dist2) < max_angle_dist_){
         
         if(orientation_dist1 < orientation_dist2){
-          req.hole_pose_estimate.position.x = ellipses_pose1[closest_hole].pose.position.x;
-          req.hole_pose_estimate.position.y = ellipses_pose1[closest_hole].pose.position.y;
-          req.hole_pose_estimate.position.z = ellipses_pose1[closest_hole].pose.position.z;
-          req.hole_pose_estimate.orientation.x = ellipses_pose1[closest_hole].pose.orientation.x;
-          req.hole_pose_estimate.orientation.y = ellipses_pose1[closest_hole].pose.orientation.y;
-          req.hole_pose_estimate.orientation.z = ellipses_pose1[closest_hole].pose.orientation.z;
-          req.hole_pose_estimate.orientation.w = ellipses_pose1[closest_hole].pose.orientation.w;
+          res.hole_pose.position.x = ellipses_pose1[closest_hole].pose.position.x;
+          res.hole_pose.position.y = ellipses_pose1[closest_hole].pose.position.y;
+          res.hole_pose.position.z = ellipses_pose1[closest_hole].pose.position.z;
+          res.hole_pose.orientation.x = ellipses_pose1[closest_hole].pose.orientation.x;
+          res.hole_pose.orientation.y = ellipses_pose1[closest_hole].pose.orientation.y;
+          res.hole_pose.orientation.z = ellipses_pose1[closest_hole].pose.orientation.z;
+          res.hole_pose.orientation.w = ellipses_pose1[closest_hole].pose.orientation.w;
         }else{
-          req.hole_pose_estimate.position.x = ellipses_pose2[closest_hole].pose.position.x;
-          req.hole_pose_estimate.position.y = ellipses_pose2[closest_hole].pose.position.y;
-          req.hole_pose_estimate.position.z = ellipses_pose2[closest_hole].pose.position.z;
-          req.hole_pose_estimate.orientation.x = ellipses_pose2[closest_hole].pose.orientation.x;
-          req.hole_pose_estimate.orientation.y = ellipses_pose2[closest_hole].pose.orientation.y;
-          req.hole_pose_estimate.orientation.z = ellipses_pose2[closest_hole].pose.orientation.z;
-          req.hole_pose_estimate.orientation.w = ellipses_pose2[closest_hole].pose.orientation.w;
+          res.hole_pose.position.x = ellipses_pose2[closest_hole].pose.position.x;
+          res.hole_pose.position.y = ellipses_pose2[closest_hole].pose.position.y;
+          res.hole_pose.position.z = ellipses_pose2[closest_hole].pose.position.z;
+          res.hole_pose.orientation.x = ellipses_pose2[closest_hole].pose.orientation.x;
+          res.hole_pose.orientation.y = ellipses_pose2[closest_hole].pose.orientation.y;
+          res.hole_pose.orientation.z = ellipses_pose2[closest_hole].pose.orientation.z;
+          res.hole_pose.orientation.w = ellipses_pose2[closest_hole].pose.orientation.w;
         }
         
       }else{
