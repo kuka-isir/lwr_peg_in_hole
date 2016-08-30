@@ -118,7 +118,8 @@ class FindHolePoseService
         cv::imshow("1/MedianBlur", current_image_->image);
       
       // Grayscale image
-      cv::cvtColor(current_image_->image, current_image_->image, cv::COLOR_RGB2GRAY);
+      if(current_image_->image.channels() >1)
+        cv::cvtColor(current_image_->image, current_image_->image, cv::COLOR_RGB2GRAY);
       if(debug_)
         cv::imshow("2/MonoImage", current_image_->image);
       
@@ -194,6 +195,13 @@ class FindHolePoseService
       if(debug_)
         std::cout << final_ellipses.size() << " ellipses remaining !!!!" << std::endl;
       
+      if(final_ellipses.size() == 0){
+        if (debug_)
+          cv::waitKey(10);
+        locking_data_ = false;
+        return false;
+      }
+      
       /** Printing ellipses on the image **/
       if(debug_){
         cv::RNG rng(12345);
@@ -223,6 +231,9 @@ class FindHolePoseService
           }
           catch (tf::TransformException ex){
             ROS_ERROR("%s",ex.what());
+            if (debug_)
+              cv::waitKey(10);
+            locking_data_ = false;
             return false;
           }
         }
@@ -251,9 +262,14 @@ class FindHolePoseService
       
       
       /** Check if closest is close enough **/
-      if(closest_dist > max_dist_)
-        return false;  
-      
+      if(closest_dist > max_dist_){
+        if (debug_){
+          ROS_ERROR("There is no holes close enough to the estimate");
+          cv::waitKey(10);
+        }
+        locking_data_ = false;
+        return false;
+      }
       
       double roll, pitch, yaw, orientation_dist1, orientation_dist2, closest_orientation;
       
@@ -292,6 +308,11 @@ class FindHolePoseService
         }
         
       }else{
+        if (debug_){
+          ROS_ERROR("The closest hole has an orientation too far from the estimate");
+          cv::waitKey(10);
+        }
+        locking_data_ = false;
         return false;
       }
 
