@@ -68,7 +68,13 @@ public:
   bool moveToCartesianPose(const geometry_msgs::Pose target_pose);
 
   // The robot tries to go to the (x,y,z) position
-  bool moveToCartesianPoseUsingPTP(const geometry_msgs::Pose target_pose); 
+  // bool moveToCartesianPose(const geometry_msgs::Vector3& XYZ_mm,const geometry_msgs::Vector3& ABC_deg,bool use_relative = false);
+
+  // The robot tries to go to the (x,y,z) position
+  bool moveToCartesianPoseUsingPTP(const geometry_msgs::Pose target_pose,bool use_relative = false);
+
+  // The robot tries to go to the (x,y,z) position - KUKA Conventions
+  bool moveToCartesianPoseUsingPTP_KUKA_Conventions(const geometry_msgs::Vector3& XYZ_mm,const geometry_msgs::Vector3& ABC_deg,bool use_relative = false);
 
   // Relative linear movement
   bool moveLinRel(const geometry_msgs::Pose pose);
