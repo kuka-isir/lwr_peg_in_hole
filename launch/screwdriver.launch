@@ -1,0 +1,14 @@
+<launch>
+  <group ns="screwdriver">
+    <param name="robot_description" textfile="$(find lwr_peg_in_hole)/launch/screwdriver.urdf" />
+    <node name="epos_hardware" pkg="epos_hardware" type="epos_hardware_node" args="screwdriver_actuator" output="screen">
+      <rosparam command="load" file="$(find lwr_peg_in_hole)/launch/screwdriver.yaml" />
+    </node>
+
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="joint_state_controller effort_controller"/>
+    <param name="effort_controller/type" value="effort_controllers/JointEffortController" />
+    <param name="effort_controller/joint" value="screwdriver_joint" />
+    <param name="joint_state_controller/type" value="joint_state_controller/JointStateController" />
+    <param name="joint_state_controller/publish_rate" value="50" />
+  </group>
+</launch>

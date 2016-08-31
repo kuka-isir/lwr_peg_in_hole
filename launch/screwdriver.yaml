@@ -1,0 +1,21 @@
+# Time in seconds
+# Current in amps
+# position, velocity, and acceleration in device units
+screwdriver_actuator:
+  actuator_name: 'screwdriver_actuator'
+  serial_number: '0x602084006486'
+  communication_protocol: 'RS232'
+  operation_mode: 'current'
+  clear_faults: true
+  torque_constant: 9.06
+
+  motor:
+    type: 1
+    dc_motor:
+      nominal_current: 0.107
+      max_output_current: 0.168
+      thermal_time_constant: 4.78
+      number_of_pole_pairs: 1
+
+  sensor:
+    type: 0
