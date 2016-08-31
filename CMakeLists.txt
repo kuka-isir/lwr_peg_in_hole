@@ -82,6 +82,7 @@ add_action_files(
   ObjectSpawn.action
   RobotMove.action
   VisualServoing.action
+  Screwdriver.action
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -159,6 +160,7 @@ add_executable(update_scene_service src/update_scene_service.cpp)
 add_executable(estimate_holes_service src/estimate_holes_service.cpp)
 add_executable(object_spawn_action_server src/object_spawn_action_server.cpp)
 add_executable(robot_move_action_server src/robot_move_action_server.cpp)
+add_executable(screwdriver_action_server src/screwdriver_action_server.cpp)
 add_executable(robot_move_node src/robot_move_node.cpp)
 add_executable(demo1 src/demo1.cpp)
 add_executable(demo0 src/demo0.cpp)
@@ -178,6 +180,7 @@ add_dependencies(object_spawn ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPOR
 add_dependencies(object_spawn_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(robot_move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(robot_move_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(screwdriver_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(robot_move_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(demo1 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(demo0 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -195,6 +198,7 @@ target_link_libraries(object_spawn_action_server ${catkin_LIBRARIES} object_spaw
 target_link_libraries(robot_move ${catkin_LIBRARIES})
 target_link_libraries(robot_move_action_server ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(robot_move_node ${catkin_LIBRARIES} robot_move yaml-cpp)
+target_link_libraries(screwdriver_action_server ${catkin_LIBRARIES})
 target_link_libraries(demo1 ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(demo0 ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(demo_lin ${catkin_LIBRARIES} robot_move yaml-cpp)
