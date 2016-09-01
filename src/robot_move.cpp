@@ -211,7 +211,7 @@ bool RobotMove::moveToJointPosition(const std::vector<double> joint_vals)
     krl_msgs::PTPGoal ptp_goal;
 
     std::vector<float> goal_vals;
-    for(int i; i<joint_vals.size();i++)
+    for(int i = 0; i<joint_vals.size();i++)
       goal_vals.push_back(joint_vals[i]);
 
     ptp_goal.ptp_goal = goal_vals;
