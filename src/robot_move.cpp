@@ -9,13 +9,13 @@ RobotMove::RobotMove(bool sim) :
   spinner_.start();
 
   ros::NodeHandle nh_param("~");
-  nh_param.param<std::string>("base_frame", base_frame_ , "base_link");
+  nh_param.param<std::string>("base_frame", base_frame_ , "link_0");
   nh_param.param<std::string>("ee_frame", ee_frame_, "link_7");
   nh_param.param<std::string>("group_name", group_name_, "arm");
 
   // Initialize move group
-  if(sim_)
-  {
+//   if(sim_)
+//   {
     group_.reset(new move_group_interface::MoveGroup(group_name_));
     group_->setPlanningTime(10.0);
     group_->allowReplanning(false);
@@ -65,13 +65,13 @@ RobotMove::RobotMove(bool sim) :
         ROS_INFO("Waiting for service");
         sleep(1.0);
     }
-  }
-  else
-  {
+//   }
+//   else
+//   {
       // Wait for krl action servers to be running
       lin_ac.waitForServer();
       ptp_ac.waitForServer();
-  }
+//   }
 
 
 }
@@ -538,7 +538,7 @@ bool RobotMove::moveAboveObjectHole(const std::string obj_name, const int hole_n
   hole_transform.setRotation(rotation_to_hole);
 
   tf::Transform up_transform;
-  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.32));
+  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.1));
   tf::Quaternion rotation;
   rotation.setRPY(0,0,0);
   up_transform.setRotation(rotation);

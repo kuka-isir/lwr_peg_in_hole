@@ -59,7 +59,7 @@ class EstimateHolesService
       ros::WallDuration sleep_t(0.5);
       service_server_ = nh_.advertiseService("estimate_holes", &EstimateHolesService::estimate_holes_poses,this);
       ROS_INFO("Estimate_holes service ready !");
-      base_frame_ = "base_link";
+      base_frame_ = "link_0";
       tf_.reset(new tf::TransformListener(ros::Duration(1.0)));
       planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf_));
       planning_scene_monitor_->startSceneMonitor();
@@ -114,7 +114,7 @@ class EstimateHolesService
       object_transform.setOrigin(tf::Vector3(obj_pose.pose.position.x, obj_pose.pose.position.y, obj_pose.pose.position.z));
       object_transform.setRotation(tf::Quaternion(obj_pose.pose.orientation.x, obj_pose.pose.orientation.y, obj_pose.pose.orientation.z, obj_pose.pose.orientation.w));
       
-      // Transform holes poses to base_link
+      // Transform holes poses to link_0
       std::vector<geometry_msgs::Pose> final_poses;
       for(int hole_nb = 0; hole_nb < poses.size(); hole_nb++){
         tf::Transform hole_transform;

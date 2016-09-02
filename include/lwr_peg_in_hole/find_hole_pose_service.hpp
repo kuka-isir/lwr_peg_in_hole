@@ -67,7 +67,7 @@ class FindHolePoseService
       nh_.param<double>("ellipse_max_ratio", ellipse_max_ratio_, 0.8);
       nh_.param<double>("hole_radius", hole_radius_, 0.0035);
       nh_.param<double>("holes_min_spacing", holes_min_spacing_, 1.0);
-      nh_.param<std::string>("base_frame", base_frame_, "base_link");
+      nh_.param<std::string>("base_frame", base_frame_, "link_0");
       nh_.param<double>("max_dist", max_dist_, 1000);
       nh_.param<double>("max_angle_dist", max_angle_dist_, 1000);
       nh_.param<bool>("debug", debug_, true);
