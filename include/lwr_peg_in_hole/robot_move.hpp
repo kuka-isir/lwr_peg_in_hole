@@ -122,6 +122,7 @@ public:
   planning_scene::PlanningScenePtr full_planning_scene_;
 
   std::string base_frame_, ee_frame_, group_name_;
+  double dist_above_hole_;
   MoveGroupPlan next_plan_;
   bool sim_, emergency_stopped_;
 

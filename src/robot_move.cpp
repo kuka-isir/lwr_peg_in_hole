@@ -12,6 +12,7 @@ RobotMove::RobotMove(bool sim) :
   nh_param.param<std::string>("base_frame", base_frame_ , "link_0");
   nh_param.param<std::string>("ee_frame", ee_frame_, "link_7");
   nh_param.param<std::string>("group_name", group_name_, "arm");
+  nh_param.param<double>("dist_above_hole", dist_above_hole_, 0.1);
 
   // Initialize move group
   group_.reset(new move_group_interface::MoveGroup(group_name_));
@@ -544,7 +545,7 @@ bool RobotMove::moveAboveObjectHole(const std::string obj_name, const int hole_n
   hole_transform.setRotation(rotation_to_hole);
 
   tf::Transform up_transform;
-  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.1));
+  up_transform.setOrigin(tf::Vector3(0.0, 0.0, dist_above_hole_));
   tf::Quaternion rotation;
   rotation.setRPY(0,0,0);
   up_transform.setRotation(rotation);

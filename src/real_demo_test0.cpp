@@ -103,10 +103,10 @@ int main(int argc, char **argv)
 
 
 
-    geometry_msgs::Pose test_lin_rel;
-    test_lin_rel.orientation.w = 1.0;
-    test_lin_rel.position.z = -0.08;
-    robot_move.moveLinRel(test_lin_rel);
+  geometry_msgs::Pose test_lin_rel;
+  test_lin_rel.orientation.w = 1.0;
+  test_lin_rel.position.z = -robot_move.dist_above_hole_/2.0;
+  robot_move.moveLinRel(test_lin_rel);
 
 
   ros::shutdown();
