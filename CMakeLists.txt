@@ -143,7 +143,6 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(peg_in_hole src/peg_in_hole.cpp)
 add_library(object_spawn src/object_spawn.cpp)
 add_library(robot_move src/robot_move.cpp)
 

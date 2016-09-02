@@ -14,66 +14,64 @@ RobotMove::RobotMove(bool sim) :
   nh_param.param<std::string>("group_name", group_name_, "arm");
 
   // Initialize move group
-//   if(sim_)
-//   {
-    group_.reset(new move_group_interface::MoveGroup(group_name_));
-    group_->setPlanningTime(10.0);
-    group_->allowReplanning(false);
-    group_->startStateMonitor(1.0);
-    group_->setPlannerId("RRTConnectkConfigDefault");
-    group_->setEndEffectorLink(ee_frame_);
-    group_->setPoseReferenceFrame(ee_frame_);
-    group_->setGoalPositionTolerance(0.01);
-    group_->setGoalOrientationTolerance(0.01);
+  group_.reset(new move_group_interface::MoveGroup(group_name_));
+  group_->setPlanningTime(10.0);
+  group_->allowReplanning(false);
+  group_->startStateMonitor(1.0);
+  group_->setPlannerId("RRTConnectkConfigDefault");
+  group_->setEndEffectorLink(ee_frame_);
+  group_->setPoseReferenceFrame(ee_frame_);
+  group_->setGoalPositionTolerance(0.01);
+  group_->setGoalOrientationTolerance(0.01);
 
-    // Configure service calls
-    fk_srv_req_.header.frame_id = base_frame_;
-    fk_srv_req_.fk_link_names.push_back(ee_frame_);
-    ik_srv_req_.ik_request.group_name = group_name_;
-    ik_srv_req_.ik_request.pose_stamped.header.frame_id = base_frame_;
-    ik_srv_req_.ik_request.attempts = 100;
-    ik_srv_req_.ik_request.timeout = ros::Duration(0.1);
-    ik_srv_req_.ik_request.ik_link_name = ee_frame_;
-    ik_srv_req_.ik_request.ik_link_names.push_back(ee_frame_);
-    ik_srv_req_.ik_request.avoid_collisions = true;
+  // Configure service calls
+  fk_srv_req_.header.frame_id = base_frame_;
+  fk_srv_req_.fk_link_names.push_back(ee_frame_);
+  ik_srv_req_.ik_request.group_name = group_name_;
+  ik_srv_req_.ik_request.pose_stamped.header.frame_id = base_frame_;
+  ik_srv_req_.ik_request.attempts = 100;
+  ik_srv_req_.ik_request.timeout = ros::Duration(0.1);
+  ik_srv_req_.ik_request.ik_link_name = ee_frame_;
+  ik_srv_req_.ik_request.ik_link_names.push_back(ee_frame_);
+  ik_srv_req_.ik_request.avoid_collisions = true;
 
-    // Initialize planning scene monitor
-    tf_.reset(new tf::TransformListener(ros::Duration(1.0)));
-    planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf_));
-    planning_scene_monitor_->startSceneMonitor();
-    planning_scene_monitor_->startStateMonitor();
-    planning_scene_monitor_->startWorldGeometryMonitor();
+  // Initialize planning scene monitor
+  tf_.reset(new tf::TransformListener(ros::Duration(1.0)));
+  planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description", tf_));
+  planning_scene_monitor_->startSceneMonitor();
+  planning_scene_monitor_->startStateMonitor();
+  planning_scene_monitor_->startWorldGeometryMonitor();
 
-    // Wait for subscribers to make sure we can publish attached/unattached objects //
-    attached_object_publisher_ = nh_.advertise<moveit_msgs::AttachedCollisionObject>("attached_collision_object", 1);
-    planning_scene_diff_publisher_ = nh_.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
-    emerg_stopped_sub_ = nh_.subscribe("/robot_emergency_stopped", 1, &RobotMove::emergStoppedCallback,this);
-    while(attached_object_publisher_.getNumSubscribers() < 1 || planning_scene_diff_publisher_.getNumSubscribers() < 1)
-    {
-      ROS_INFO("Waiting for planning scene");
+  // Wait for subscribers to make sure we can publish attached/unattached objects //
+  attached_object_publisher_ = nh_.advertise<moveit_msgs::AttachedCollisionObject>("attached_collision_object", 1);
+  planning_scene_diff_publisher_ = nh_.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
+  emerg_stopped_sub_ = nh_.subscribe("/robot_emergency_stopped", 1, &RobotMove::emergStoppedCallback,this);
+  while(attached_object_publisher_.getNumSubscribers() < 1 || planning_scene_diff_publisher_.getNumSubscribers() < 1)
+  {
+    ROS_INFO("Waiting for planning scene");
+    sleep(1.0);
+  }
+
+  // Add some extra sleep to make sure the planning scene is loaded
+  usleep(1000000*3);
+  // Wait until the required ROS services are available
+  ik_service_client_ = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
+  fk_service_client_ = nh_.serviceClient<moveit_msgs::GetPositionFK> ("compute_fk");
+  while(!ik_service_client_.exists() || !fk_service_client_.exists())
+  {
+      ROS_INFO("Waiting for service");
       sleep(1.0);
-    }
+  }
 
+  // Wait for controllers action servers
+  if(sim_)
+    // Wait for follow_joint_trajectory action server
     controller_ac.waitForServer();
-    // Add some extra sleep to make sure the planning scene is loaded
-    usleep(1000000*3);
-    // Wait until the required ROS services are available
-    ik_service_client_ = nh_.serviceClient<moveit_msgs::GetPositionIK> ("compute_ik");
-    fk_service_client_ = nh_.serviceClient<moveit_msgs::GetPositionFK> ("compute_fk");
-    while(!ik_service_client_.exists() || !fk_service_client_.exists())
-    {
-        ROS_INFO("Waiting for service");
-        sleep(1.0);
-    }
-//   }
-//   else
-//   {
-      // Wait for krl action servers to be running
-      lin_ac.waitForServer();
-      ptp_ac.waitForServer();
-//   }
-
-
+  else{
+    // Wait for krl action servers to be running
+    lin_ac.waitForServer();
+    ptp_ac.waitForServer();
+  }
 }
 
 void RobotMove::getPlanningScene(moveit_msgs::PlanningScene& planning_scene, planning_scene::PlanningScenePtr& full_planning_scene)
@@ -311,44 +309,45 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
 
 bool RobotMove::moveToCartesianPoseUsingPTP_KUKA_Conventions(const geometry_msgs::Vector3& XYZ_mm,const geometry_msgs::Vector3& ABC_deg,bool use_relative)
 {
-    if(sim_){
-        ROS_ERROR("Not Implemented");
-        return false;
-    }else{
+  if(sim_){
+    ROS_ERROR("Not Implemented");
+    return false;
+  }else{
 
-      krl_msgs::PTPGoal ptp_goal;
+    krl_msgs::PTPGoal ptp_goal;
 
-      geometry_msgs::Vector3 xyz, rpy;
-      xyz.x = XYZ_mm.x/1000.0;
-      xyz.y = XYZ_mm.y/1000.0;
-      xyz.z = XYZ_mm.z/1000.0;
+    geometry_msgs::Vector3 xyz, rpy;
+    xyz.x = XYZ_mm.x/1000.0;
+    xyz.y = XYZ_mm.y/1000.0;
+    xyz.z = XYZ_mm.z/1000.0;
 
-      rpy.z = ABC_deg.x;
-      rpy.y = ABC_deg.y;
-      rpy.x = ABC_deg.z;
+    rpy.z = ABC_deg.x;
+    rpy.y = ABC_deg.y;
+    rpy.x = ABC_deg.z;
 
-      ptp_goal.XYZ = xyz;
-      ptp_goal.RPY = rpy;
-      ptp_goal.ptp_input_type = krl_msgs::PTPGoal::Cartesian;
-      ptp_goal.vel_percent = 10;
-      ptp_goal.use_radians = false;
-      ptp_goal.use_relative = use_relative;
+    ptp_goal.XYZ = xyz;
+    ptp_goal.RPY = rpy;
+    ptp_goal.ptp_input_type = krl_msgs::PTPGoal::Cartesian;
+    ptp_goal.vel_percent = 10;
+    ptp_goal.use_radians = false;
+    ptp_goal.use_relative = use_relative;
 
-      ptp_ac.sendGoal(ptp_goal);
-      bool finished_before_timeout = ptp_ac.waitForResult(ros::Duration(30.0));
+    ptp_ac.sendGoal(ptp_goal);
+    bool finished_before_timeout = ptp_ac.waitForResult(ros::Duration(30.0));
 
-      if (finished_before_timeout)
-      {
-        actionlib::SimpleClientGoalState state = ptp_ac.getState();
-        ROS_INFO("PTP action finished: %s",state.toString().c_str());
-        return state == actionlib::SimpleClientGoalState::SUCCEEDED;
-      }
-      else{
-        ROS_INFO("PTP action did not finish before the time out.");
-        return false;
-      }
+    if (finished_before_timeout)
+    {
+      actionlib::SimpleClientGoalState state = ptp_ac.getState();
+      ROS_INFO("PTP action finished: %s",state.toString().c_str());
+      return state == actionlib::SimpleClientGoalState::SUCCEEDED;
     }
+    else{
+      ROS_INFO("PTP action did not finish before the time out.");
+      return false;
+    }
+  }
 }
+
 bool RobotMove::moveToCartesianPoseUsingPTP(const geometry_msgs::Pose pose,bool use_relative)
 {
 
@@ -399,6 +398,7 @@ bool RobotMove::moveLinRel(const geometry_msgs::Pose pose)
 {
 
   if(sim_){
+    ROS_ERROR("Functions not available on sim yet");
     return false;
   }
   else{
@@ -475,22 +475,28 @@ bool RobotMove::moveToStart()
 
 bool RobotMove::moveToRandomTarget()
 {
-  group_->setRandomTarget();
+  if(sim_){
+    group_->setRandomTarget();
 
-  // Plan trajectory
-  if (!group_->plan(next_plan_)){
-    ROS_INFO("Motion planning to random target failed");
-    return false;
-  }
-  ROS_INFO("Motion planning to random target successful");
+    // Plan trajectory
+    if (!group_->plan(next_plan_)){
+      ROS_INFO("Motion planning to random target failed");
+      return false;
+    }
+    ROS_INFO("Motion planning to random target successful");
 
-  // Execute trajectory
-  if (executeJointTrajectory(next_plan_)) {
-    ROS_INFO("Joint trajectory execution to random target successful");
-    return true;
+    // Execute trajectory
+    if (executeJointTrajectory(next_plan_)) {
+      ROS_INFO("Joint trajectory execution to random target successful");
+      return true;
+    }
+    else {
+      ROS_ERROR("Joint trajectory execution to random target failed");
+      return false;
+    }
   }
-  else {
-    ROS_ERROR("Joint trajectory execution to random target failed");
+  else{
+    ROS_ERROR("Function not available with the real robot");
     return false;
   }
 }
