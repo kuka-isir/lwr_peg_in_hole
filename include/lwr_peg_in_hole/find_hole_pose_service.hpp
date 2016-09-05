@@ -68,7 +68,7 @@ class FindHolePoseService
       nh_.param<double>("hole_radius", hole_radius_, 0.0035);
       nh_.param<double>("holes_min_spacing", holes_min_spacing_, 1.0);
       nh_.param<std::string>("base_frame", base_frame_, "link_0");
-      nh_.param<double>("max_dist", max_dist_, 1000);
+      nh_.param<double>("max_dist", max_dist_, 0.1);
       nh_.param<double>("max_angle_dist", max_angle_dist_, 1000);
       nh_.param<bool>("debug", debug_, true);
 
@@ -76,7 +76,8 @@ class FindHolePoseService
       if(debug_){
         cv::namedWindow("Original Image");
         cv::namedWindow("1/MedianBlur");
-        cv::namedWindow("2/MonoImage");
+	cv::namedWindow("2/MonoImage");
+        cv::namedWindow("2-bis/Equalized");
         cv::namedWindow("3/AdaptiveThresholding");
         cv::namedWindow("4/Opening");
         cv::namedWindow("Ellipse detection");
@@ -122,6 +123,11 @@ class FindHolePoseService
         cv::cvtColor(current_image_->image, current_image_->image, cv::COLOR_RGB2GRAY);
       if(debug_)
         cv::imshow("2/MonoImage", current_image_->image);
+      
+      // Equalize histogram
+      cv::equalizeHist(current_image_->image,current_image_->image);
+      if(debug_)
+        cv::imshow("2-bis/Equalized", current_image_->image);
       
       // Adaptive threshold giving almost only edges
       cv::adaptiveThreshold(current_image_->image, current_image_->image, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 11, 2);
@@ -271,6 +277,8 @@ class FindHolePoseService
         return false;
       }
       
+      std::cout << "ellipse_pose1\n" << ellipses_pose1[closest_hole].pose <<std::endl;
+      std::cout << "ellipse_pose2\n" << ellipses_pose2[closest_hole].pose <<std::endl;
       double roll, pitch, yaw, orientation_dist1, orientation_dist2, closest_orientation;
       
       tf_computed.setOrigin(tf::Vector3(ellipses_pose1[closest_hole].pose.position.x, ellipses_pose1[closest_hole].pose.position.y, ellipses_pose1[closest_hole].pose.position.z));
