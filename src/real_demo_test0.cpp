@@ -9,6 +9,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "demo0");
   ros::NodeHandle nh("");
 
+  ros::Publisher pub_pose_estimate = nh.advertise<geometry_msgs::PoseStamped>("/hole/estimate", 1);
+  ros::Publisher pub_pose_exact = nh.advertise<geometry_msgs::PoseStamped>("/hole/exact", 1);
 
   bool sim = false;
   RobotMove robot_move(sim);
@@ -91,59 +93,104 @@ int main(int argc, char **argv)
   // Move to above first hole
   while(!robot_move.moveAboveObjectHole("plaque2", 0) && ros::ok()){usleep(1E6);}
   
-  // Get closer to the hole
-  geometry_msgs::Pose test_lin_rel;
-  test_lin_rel.orientation.w = 1.0;
-  test_lin_rel.position.z = -robot_move.dist_above_hole_/2.0;
-  robot_move.moveLinRel(test_lin_rel);
- 
-  // Wait 2s to stabilize camera image
-  usleep(2E6);
+  // Move A Plat
+  while(!robot_move.moveAPlat() && ros::ok()){usleep(1E6);}
   
-  // Update object position in moveit planning scene
-  req_find.hole_pose_estimate = resp_estimate.holes_poses[0];
-  while(!find_client.call(req_find,resp_find) && ros::ok())
-  {
-      usleep(1E6);
-      ROS_INFO("Looking for real hole pose...");
-  }
-  std::cout << "Estimate pose\n" << req_find.hole_pose_estimate << std::endl;
-  std::cout << "Correct pose\n" << resp_find.hole_pose << std::endl;
+  // Move A Plat
+  while(!robot_move.moveToHeight(0.05) && ros::ok()){usleep(1E6);}
   
   
-  // Correct pose
-  resp_find.hole_pose.position.z += robot_move.dist_above_hole_/2.0;
+//   // Wait 2s
+//   usleep(2E6);
+//   
+//   while(!robot_move.moveAboveObjectHole("plaque2", 1) && ros::ok()){usleep(1E6);}
   
-  tf::Transform hole_transform;
-  hole_transform.setOrigin(tf::Vector3(resp_find.hole_pose.position.x, resp_find.hole_pose.position.y, resp_find.hole_pose.position.z));
-  hole_transform.setRotation(tf::Quaternion(resp_find.hole_pose.orientation.x, resp_find.hole_pose.orientation.y, resp_find.hole_pose.orientation.z, resp_find.hole_pose.orientation.w));
+//   // Get closer to the hole
+//   geometry_msgs::Pose test_lin_rel;
+//   test_lin_rel.orientation.w = 1.0;
+//   test_lin_rel.position.z = -robot_move.dist_above_hole_/2.0;
+//   robot_move.moveLinRel(test_lin_rel);
+//  
+//   // Wait 2s to stabilize camera image
+//   usleep(2E6);
+//   
 
-  tf::Transform pi_rotation_transform;
-  pi_rotation_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-  tf::Quaternion pi_rotation;
-  pi_rotation.setRPY(M_PI,0,0);
-  pi_rotation_transform.setRotation(pi_rotation);
-
-  hole_transform *= pi_rotation_transform;
-  
-  resp_find.hole_pose.position.x = hole_transform.getOrigin().getX();
-  resp_find.hole_pose.position.y = hole_transform.getOrigin().getY();
-  resp_find.hole_pose.position.z = hole_transform.getOrigin().getZ();
-//   resp_find.hole_pose.orientation.x = hole_transform.getRotation().getX();
-//   resp_find.hole_pose.orientation.y = hole_transform.getRotation().getY();
-//   resp_find.hole_pose.orientation.z = hole_transform.getRotation().getZ();
-//   resp_find.hole_pose.orientation.w = hole_transform.getRotation().getW();
-  
-    // HACK !!!!!!!!!!
-  tf::Quaternion perfect_orientation;
-  perfect_orientation.setRPY(-M_PI,0,-(M_PI/2.0 + 20*M_PI/180.0));
-  resp_find.hole_pose.orientation.x = perfect_orientation.x();
-  resp_find.hole_pose.orientation.y = perfect_orientation.y();
-  resp_find.hole_pose.orientation.z = perfect_orientation.z();
-  resp_find.hole_pose.orientation.w = perfect_orientation.w();
-  
-  
-  while(!robot_move.moveToCartesianPose(resp_find.hole_pose) && ros::ok()){usleep(1E6);}
+//   bool first = true;
+//   double z_const = 0.0;
+//   while(ros::ok())
+//   {
+//     
+//   // Wait 2s
+//   usleep(2E6);
+// 
+//   // Find real hole pose
+//   req_find.hole_pose_estimate = resp_estimate.holes_poses[0];
+//   while(!find_client.call(req_find,resp_find) && ros::ok())
+//   {
+//       usleep(1E6);
+//       ROS_INFO("Looking for real hole pose...");
+//   }
+//   std::cout << "Estimate pose\n" << req_find.hole_pose_estimate << std::endl;
+//   std::cout << "Correct pose\n" << resp_find.hole_pose << std::endl;
+//   
+//   geometry_msgs::PoseStamped estimate, exact;
+//   estimate.header.frame_id = "link_0";
+//   estimate.header.stamp = ros::Time::now();
+//   estimate.pose = req_find.hole_pose_estimate;
+//   exact.header.frame_id = "link_0";
+//   exact.header.stamp = ros::Time::now();
+//   exact.pose = resp_find.hole_pose;
+//   
+//   tf::Transform hole_transform;
+//   hole_transform.setOrigin(tf::Vector3(resp_find.hole_pose.position.x, resp_find.hole_pose.position.y, resp_find.hole_pose.position.z));
+//   hole_transform.setRotation(tf::Quaternion(resp_find.hole_pose.orientation.x, resp_find.hole_pose.orientation.y, resp_find.hole_pose.orientation.z, resp_find.hole_pose.orientation.w));
+// 
+//   tf::Transform pi_rotation_transform;
+//   pi_rotation_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+//   tf::Quaternion pi_rotation;
+//   pi_rotation.setRPY(M_PI,0,0);
+//   pi_rotation_transform.setRotation(pi_rotation);
+//   
+//   tf::Transform up_transform;
+//   up_transform.setOrigin(tf::Vector3(0.0, 0.0, -robot_move.dist_above_hole_));
+//   tf::Quaternion zero_rotation;
+//   zero_rotation.setRPY(0,0,0);
+//   up_transform.setRotation(zero_rotation);
+// 
+//   hole_transform *= pi_rotation_transform;
+//   hole_transform *= up_transform;
+//   
+//   resp_find.hole_pose.position.x = hole_transform.getOrigin().getX();
+//   resp_find.hole_pose.position.y = hole_transform.getOrigin().getY();
+//   if(first)
+//   {
+//     first = false;
+//     resp_find.hole_pose.position.z = hole_transform.getOrigin().getZ();
+//     z_const = hole_transform.getOrigin().getZ();
+//   }else
+//   {
+//     resp_find.hole_pose.position.z = z_const;
+//   }
+// // //   resp_find.hole_pose.orientation.x = hole_transform.getRotation().getX();
+// // //   resp_find.hole_pose.orientation.y = hole_transform.getRotation().getY();
+// // //   resp_find.hole_pose.orientation.z = hole_transform.getRotation().getZ();
+// // //   resp_find.hole_pose.orientation.w = hole_transform.getRotation().getW();
+// //   
+// //     // HACK !!!!!!!!!!
+//   tf::Quaternion perfect_orientation;
+//   perfect_orientation.setRPY(-M_PI,0,-(M_PI/2.0 + 20*M_PI/180.0));
+//   resp_find.hole_pose.orientation.x = perfect_orientation.x();
+//   resp_find.hole_pose.orientation.y = perfect_orientation.y();
+//   resp_find.hole_pose.orientation.z = perfect_orientation.z();
+//   resp_find.hole_pose.orientation.w = perfect_orientation.w();
+//   
+//   
+//   while(!robot_move.moveToCartesianPose(resp_find.hole_pose) && ros::ok()){usleep(1E6);}
+//   
+//   //while(ros::ok()){
+//     pub_pose_estimate.publish(estimate);
+//     pub_pose_exact.publish(exact);
+//   }
   
   ros::shutdown();
   return 0;
