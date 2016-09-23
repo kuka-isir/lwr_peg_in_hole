@@ -24,9 +24,10 @@ protected:
 
   void executeCB(const lwr_peg_in_hole::HoleVisualServoingGoalConstPtr& goal)
   {
-    ROS_WARN("IN CALLBACK EXECUTE");
     if(goal->save_hole){
-      hole_visual_servoing_.saveHole();
+      hole_visual_servoing_.save_ideal_hole_location_ = true;
+      result_.success = true;
+      act_srv_.setSucceeded(result_);
       return;
     }
     
@@ -39,20 +40,25 @@ protected:
         return;
       }
       
-      geometry_msgs::Pose rel;
-      rel.orientation.w = 1.0;
-      if(hole_visual_servoing_.error_x_ > 0)
-        rel.position.x = std::min(hole_visual_servoing_.error_x_*0.0001,0.01);
-      else
-        rel.position.x = std::max(hole_visual_servoing_.error_x_*0.0001,-0.01);
+      if(hole_visual_servoing_.has_set_ideal_){
+        geometry_msgs::Pose rel;
+        rel.orientation.w = 1.0;
+        if(hole_visual_servoing_.error_x_ > 0)
+          rel.position.x = std::min(hole_visual_servoing_.error_x_*0.0001,0.01);
+        else
+          rel.position.x = std::max(hole_visual_servoing_.error_x_*0.0001,-0.01);
+        
+        if(hole_visual_servoing_.error_y_ > 0)
+          rel.position.y = std::min(hole_visual_servoing_.error_y_*0.0001,0.01);
+        else
+          rel.position.y = std::max(hole_visual_servoing_.error_y_*0.0001,-0.01);
       
-      if(hole_visual_servoing_.error_y_ > 0)
-        rel.position.y = std::min(hole_visual_servoing_.error_y_*0.0001,0.01);
-      else
-        rel.position.y = std::max(hole_visual_servoing_.error_y_*0.0001,-0.01);
-    
-      std::cout << "Sending command ["<<rel.position.x<<","<<rel.position.y<<"]"<<std::endl;
-      robot_move_.moveLinRelInTool(rel,0.1);
+        std::cout << "Sending command ["<<rel.position.x<<","<<rel.position.y<<"]"<<std::endl;
+        robot_move_.moveLinRelInTool(rel,0.1);
+      }
+      else{
+        ROS_ERROR("Ideal hole location not saved earlier... !");
+      }
       
       ros::spinOnce();
       r.sleep();

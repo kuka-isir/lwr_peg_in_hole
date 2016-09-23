@@ -1,4 +1,5 @@
 #include <lwr_peg_in_hole/hole_visual_servoing.hpp>
+#include <fstream>
 
 HoleVisualServoing::HoleVisualServoing(ros::NodeHandle& nh) : nh_(nh)
 { 
@@ -31,19 +32,67 @@ HoleVisualServoing::HoleVisualServoing(ros::NodeHandle& nh) : nh_(nh)
     cv::namedWindow("Ellipse detection");
   }
   
+  seeing_ellipses_ = false;
 }
 
 bool HoleVisualServoing::isPinAboveHole()
 {       
   std::cout << "Error in image ["<<std::abs(error_x_)<<","<<std::abs(error_y_)<<"]"<<std::endl;
-  return ((std::abs(error_x_) < 1) && (std::abs(error_y_) < 1));
+  return ((std::abs(error_x_) < 1) && (std::abs(error_y_) < 1)) && seeing_ellipses_;
 }
 
 void HoleVisualServoing::saveHole()
 {       
-  save_ideal_hole_location_ = true;
+
+  YAML::Emitter out_yaml;
+  out_yaml << YAML::BeginMap;
+  out_yaml << YAML::Key << "angle";
+  out_yaml << YAML::Value << ideal_hole_location_.angle;
+  out_yaml << YAML::Key << "center_x";
+  out_yaml << YAML::Value << ideal_hole_location_.center.x;
+  out_yaml << YAML::Key << "center_y";
+  out_yaml << YAML::Value << ideal_hole_location_.center.y;
+  out_yaml << YAML::Key << "width";
+  out_yaml << YAML::Value << ideal_hole_location_.size.width;
+  out_yaml << YAML::Key << "height";
+  out_yaml << YAML::Value << ideal_hole_location_.size.height;
+  out_yaml << YAML::EndMap;
+
+  std::string filename = ros::package::getPath("lwr_peg_in_hole")+"/holes/perfect_ellipse.yaml" ;
+  std::ofstream fout(filename.c_str());
+  fout << out_yaml.c_str();
+  
+  save_ideal_hole_location_ = false;
+  has_set_ideal_ = false;
+  
   return;
+  
 }
+
+void HoleVisualServoing::loadSavedHole(std::string filename)
+{
+  ROS_INFO_STREAM("Trying to load saved ellipse");
+  YAML::Node ellipse_config = YAML::LoadFile(ros::package::getPath("lwr_peg_in_hole")+"/holes/"+filename+".yaml");
+
+  if (!ellipse_config["angle"]) {
+    ROS_ERROR("Couldn't read ellipse in %s", filename.c_str());
+    has_set_ideal_ = false;
+    return;
+  }
+  YAML::Node angle = ellipse_config["angle"];
+  ideal_hole_location_.angle = angle.as<float>();
+  YAML::Node center_x = ellipse_config["center_x"];
+  ideal_hole_location_.center.x = center_x.as<float>();
+  YAML::Node center_y = ellipse_config["center_y"];
+  ideal_hole_location_.center.y = center_y.as<float>();
+  YAML::Node width = ellipse_config["width"];
+  ideal_hole_location_.size.width = width.as<float>();
+  YAML::Node height = ellipse_config["height"];
+  ideal_hole_location_.size.height = height.as<float>();
+  
+  has_set_ideal_ = true;
+}
+
 
 bool HoleVisualServoing::verifyCircle(const cv::RotatedRect& ellipse_fitted, const cv::Point2f& min_circle_center, float& min_circle_radius){  
   // Check if ellipse is close enough to a circle
@@ -66,7 +115,44 @@ bool HoleVisualServoing::verifyCircle(const cv::RotatedRect& ellipse_fitted, con
   return rms<fit_ellipse_max_error_;
 }
 
+cv::RotatedRect HoleVisualServoing::closestEllipse(const std::vector<cv::RotatedRect>& ellipses){
+
+  int best_ellipse = -1;
+  double best_dist = -1.0;
+  
+  for(int i=0; i<ellipses.size(); i++){
+    // Check on width
+    if((ideal_hole_location_.size.height > ellipses[i].size.height +5) || (ideal_hole_location_.size.height < ellipses[i].size.height -5))
+      continue;
+    
+    // Check on height
+    if((ideal_hole_location_.size.width > ellipses[i].size.width +5) || (ideal_hole_location_.size.width < ellipses[i].size.width -5))
+      continue;
+    
+    double current_dist = (ellipses[i].center.x-ideal_hole_location_.center.x)*(ellipses[i].center.x-ideal_hole_location_.center.x)
+                        + (ellipses[i].center.y-ideal_hole_location_.center.y)*(ellipses[i].center.y-ideal_hole_location_.center.y);
+                        
+    if((best_dist <0) || (current_dist < best_dist)){
+      best_dist = current_dist;
+      best_ellipse = i;
+    }
+  }
+  
+  if(best_ellipse >=0){
+    seeing_ellipses_ = true;
+    return ellipses[best_ellipse];
+  }else{
+    seeing_ellipses_ = false;
+    return cv::RotatedRect();
+  }
+}
+
+
 void HoleVisualServoing::callback(const sensor_msgs::Image::ConstPtr& image_msg, const sensor_msgs::CameraInfo::ConstPtr& cam_info){
+  
+  // Load perfect ellipse once
+  if(!has_set_ideal_)
+    loadSavedHole("perfect_ellipse");
   
   /** Image processing to find the ellipses in the image **/
   // Original image
@@ -217,38 +303,49 @@ void HoleVisualServoing::callback(const sensor_msgs::Image::ConstPtr& image_msg,
     
     color = cv::Scalar(0,0,255);
     cv::circle(cv_image_orig->image,cv::Point(ideal_hole_location_.center.x,ideal_hole_location_.center.y),4, color, -1, 8);
-    cv::ellipse(cv_image_orig->image,ideal_hole_location_, color, 1, 8);
-  }
-  cv::imshow("Ellipse detection", cv_image_orig->image);
-  
-  if(save_ideal_hole_location_ && final_ellipses.size() == 1)
-  {
-    save_ideal_hole_location_ = false;
-    ideal_hole_location_ = ellipses.back();
-    has_set_ideal_ = true;
+    cv::RotatedRect printTargetellipse(ideal_hole_location_);
+    printTargetellipse.size.height -=5;
+    printTargetellipse.size.width -=5;
+    cv::ellipse(cv_image_orig->image,printTargetellipse, color, 2, 8);
+    printTargetellipse.size.height +=10;
+    printTargetellipse.size.width +=10;
+    cv::ellipse(cv_image_orig->image,printTargetellipse, color, 2, 8);
     
   }
-  else if(final_ellipses.size() > 1)
+  
+  // Save current lonely ellipse if asked
+  if(save_ideal_hole_location_ && final_ellipses.size() == 1)
   {
-    ROS_ERROR("There's more than one ellipse in sight !");
-  }
-  else if(final_ellipses.size() == 0)
-  {
-    ROS_ERROR("No ellipse found !");
+    ideal_hole_location_ = ellipses.back();
+    saveHole();
+    has_set_ideal_ = true; 
   }
   
-  // Compute errors
-  if(final_ellipses.size() == 1 && has_set_ideal_)
-  {
-    cv::RotatedRect ellipse_current = ellipses.back();
-    error_x_ = ideal_hole_location_.center.x - ellipse_current.center.x;
-    error_y_ = ideal_hole_location_.center.y - ellipse_current.center.y;
-//     geometry_msgs::Twist error;
-//     error.linear.x = error_x;
-//     error.linear.y = error_y;
-//     error_pub_.publish(error);
+  if(has_set_ideal_){
+    seeing_ellipses_ = false;
+    
+    // Keep only the ellipse closest to the ideal
+    cv::RotatedRect closest_ellipse = closestEllipse(final_ellipses);
+    
+    // Compute error
+    if(seeing_ellipses_){
+      // Print closest ellipse
+      cv::Scalar green = cv::Scalar(0,255,0);
+      cv::circle(cv_image_orig->image,cv::Point(closest_ellipse.center.x,closest_ellipse.center.y),4, green, -1, 8);
+      cv::ellipse(cv_image_orig->image,closest_ellipse, green, 2, 8);
+      
+      error_x_ = ideal_hole_location_.center.x - closest_ellipse.center.x;
+      error_y_ = ideal_hole_location_.center.y - closest_ellipse.center.y;
+    }
+    else{
+      // Stop moving if not seeing an ideal like ellipse
+      error_x_ = 0.0;
+      error_y_ = 0.0;
+    }
   }
- 
+  
+  cv::imshow("Ellipse detection", cv_image_orig->image);
+  
   // Give some time in loop to display the images
   cv::waitKey(10);
 }
