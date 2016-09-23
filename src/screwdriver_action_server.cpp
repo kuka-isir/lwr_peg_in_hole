@@ -61,6 +61,10 @@ protected:
         ros::spinOnce();
       }
       
+      // Closing for 5s
+      usleep(1000*1000*5);
+      ros::spinOnce();
+      
       pub_cmd_.publish(stopping_cmd_);
       result_.success = true;
       act_srv_.setSucceeded(result_);
