@@ -71,6 +71,19 @@ int main(int argc, char **argv)
 //   XYZ = [-0.39153, -0.283, -0.010] RPY=[M_PI,0,-120.0*M_PI/180.0]
 //   [0.9150278568267822, 0.580691933631897, -0.37253355979919434, -1.812914490699768, 0.2822932004928589, 0.800197184085846, -0.9944129586219788]
 
+  double second_fastener_up_tab[] = {0.8893643021583557, 0.30610182881355286, -0.3718636929988861, -1.9161169528961182, 0.1354074478149414, 0.9433703422546387, -0.943113386631012};
+  std::vector<double> second_fastener_up;
+  second_fastener_up.assign(second_fastener_up_tab,second_fastener_up_tab+7);
+  
+//   Au dessus du trou 2
+//   XYZ = [-0.35987, -0.23188, 0.080] RPY=[M_PI,0,-120.0*M_PI/180.0]
+//   [0.8893643021583557, 0.30610182881355286, -0.3718636929988861, -1.9161169528961182, 0.1354074478149414, 0.9433703422546387, -0.943113386631012]
+  
+//   Dans le trou 2
+//   XYZ = [-0.36041, -0.23096, -0.010] RPY=[M_PI,0,-120.0*M_PI/180.0]
+//   [0.8779093027114868, 0.4785161316394806, -0.37185221910476685, -1.983768105506897, 0.25586992502212524, 0.7233907580375671, -1.045378565788269]
+  
+  
   
   /*********** DEMO script *****************/
   // Go to start position
@@ -78,11 +91,12 @@ int main(int argc, char **argv)
   
   // Go to first_fastener_up
   robot_move.moveToJointPosition(first_fastener_up);
+//   robot_move.moveToJointPosition(second_fastener_up);
   
   // Get fastener
   geometry_msgs::Pose get_fastener;
   get_fastener.orientation.w = 1.0;
-  get_fastener.position.z = 0.09;
+  get_fastener.position.z = 0.092;
   robot_move.moveLinRelInTool(get_fastener, 2.0);
   
 //   usleep(1E6);
@@ -97,8 +111,7 @@ int main(int argc, char **argv)
   geometry_msgs::Pose move_up;
   move_up.orientation.w = 1.0;
   move_up.position.z = -0.09;
-  robot_move.moveLinRelInTool(move_up, 30.0);
-  
+  robot_move.moveLinRelInTool(move_up, 10.0);
   
   // Go to lookup position
   robot_move.moveToJointPosition(look_up1);
@@ -152,6 +165,80 @@ int main(int argc, char **argv)
   
   // Move up
   robot_move.moveToHeight(0.16,10.0);
+  
+  
+  /////// Second fastener ///////
+  
+  // Go to start position
+  robot_move.moveToStart();
+  
+  // Go to first_fastener_up
+  robot_move.moveToJointPosition(second_fastener_up);
+  
+  // Get fastener
+  robot_move.moveLinRelInTool(get_fastener, 2.0);
+  
+//   usleep(1E6);
+//   ROS_INFO("Putting fastener ...");
+//   lwr_peg_in_hole::ScrewdriverGoal open_screwdriver_goal;
+//   open_screwdriver_goal.opening = 1;
+//   screwdriver_ac.sendGoalAndWait(open_screwdriver_goal);
+//   usleep(1E6);
+//   ROS_INFO("Fastener in place !");
+  
+  // Move up
+  robot_move.moveLinRelInTool(move_up, 10.0);
+  
+  // Go to lookup position
+  robot_move.moveToJointPosition(look_up1);
+  
+  // Wait 1s
+  usleep(1E6);
+  
+  // Update object position in moveit planning scene
+  while(!up_client.call(req_update,resp_update) && ros::ok())
+  {
+      usleep(1E6);
+      ROS_INFO("Waiting for object...");
+  }
+  
+  // Read holes poses
+  robot_move.loadHolesLocation("plaque2");
+//   while(!estimate_client.call(req_estimate,resp_estimate) && ros::ok())
+//   {
+//       usleep(1E6);
+//       ROS_INFO("Getting the holes pose estimate...");
+//   }
+  
+  // Move to above first hole
+  robot_move.moveAboveObjectHole("plaque2", 1);
+  
+  // Move A Plat
+  robot_move.moveAPlat(30.0);
+  
+  // Set bias of ati_sensor
+  ros::service::call("/ft_sensor/set_bias",empty_req,empty_resp);
+  
+  // Move A Plat
+  robot_move.moveToHeight(0.12,10.0);
+  
+  usleep(2E6);
+  // Visual servoing on the hole
+  visual_ac.sendGoalAndWait(visual_goal);
+    
+  // Move In Hole
+  robot_move.moveToHeight(0.0,1.0,true,3.0);
+  
+  // Screw fastener
+  usleep(5E5);
+  ROS_INFO("Putting fastener ...");
+  screwdriver_ac.sendGoalAndWait(screwdriver_goal);
+  ROS_INFO("Fastener in place !");
+  
+  // Move up
+  robot_move.moveToHeight(0.16,10.0);
+  
+  robot_move.moveToStart();
   
   ros::shutdown();
   return 0;
