@@ -81,7 +81,7 @@ add_action_files(
   FILES
   ObjectSpawn.action
   RobotMove.action
-  VisualServoing.action
+  HoleVisualServoing.action
   Screwdriver.action
 )
 
@@ -145,6 +145,7 @@ include_directories(
 ## Declare a C++ library
 add_library(object_spawn src/object_spawn.cpp)
 add_library(robot_move src/robot_move.cpp)
+add_library(hole_visual_servoing src/hole_visual_servoing.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -159,11 +160,15 @@ add_executable(estimate_holes_service src/estimate_holes_service.cpp)
 add_executable(object_spawn_action_server src/object_spawn_action_server.cpp)
 add_executable(robot_move_action_server src/robot_move_action_server.cpp)
 add_executable(screwdriver_action_server src/screwdriver_action_server.cpp)
+add_executable(hole_visual_servoing_action_server src/hole_visual_servoing_action_server.cpp)
+add_executable(hole_visual_servoing_node src/hole_visual_servoing_node.cpp)
 add_executable(robot_move_node src/robot_move_node.cpp)
 add_executable(demo1 src/demo1.cpp)
 add_executable(demo0 src/demo0.cpp)
+add_executable(demo_a_plat src/demo_a_plat.cpp)
 add_executable(demo_lin src/demo_lin.cpp)
 add_executable(real_demo_test0 src/real_demo_test0.cpp)
+add_executable(real_demo_visual_servo_2d src/real_demo_visual_servo_2d.cpp)
 add_executable(ellipse_detection src/ellipse_detection.cpp)
 add_executable(find_hole_pose_service src/find_hole_pose_service.cpp)
 
@@ -179,6 +184,8 @@ add_dependencies(object_spawn_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} 
 add_dependencies(robot_move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(robot_move_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(screwdriver_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(hole_visual_servoing ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(hole_visual_servoing_action_server ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(robot_move_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(demo1 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(demo0 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -195,12 +202,17 @@ target_link_libraries(object_spawn ${catkin_LIBRARIES} yaml-cpp)
 target_link_libraries(object_spawn_action_server ${catkin_LIBRARIES} object_spawn)
 target_link_libraries(robot_move ${catkin_LIBRARIES})
 target_link_libraries(robot_move_action_server ${catkin_LIBRARIES} robot_move yaml-cpp)
+target_link_libraries(hole_visual_servoing ${catkin_LIBRARIES} )
+target_link_libraries(hole_visual_servoing_action_server ${catkin_LIBRARIES} hole_visual_servoing robot_move yaml-cpp)
+target_link_libraries(hole_visual_servoing_node ${catkin_LIBRARIES} hole_visual_servoing)
 target_link_libraries(robot_move_node ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(screwdriver_action_server ${catkin_LIBRARIES})
 target_link_libraries(demo1 ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(demo0 ${catkin_LIBRARIES} robot_move yaml-cpp)
+target_link_libraries(demo_a_plat ${catkin_LIBRARIES} robot_move hole_visual_servoing yaml-cpp)
 target_link_libraries(demo_lin ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(real_demo_test0 ${catkin_LIBRARIES} robot_move yaml-cpp)
+target_link_libraries(real_demo_visual_servo_2d ${catkin_LIBRARIES} robot_move yaml-cpp)
 target_link_libraries(ellipse_detection ${catkin_LIBRARIES} )
 target_link_libraries(find_hole_pose_service ${catkin_LIBRARIES} )
 
