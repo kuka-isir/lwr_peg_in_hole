@@ -68,8 +68,8 @@ class FindHolePoseService
       nh_.param<double>("hole_radius", hole_radius_, 0.0035);
       nh_.param<double>("holes_min_spacing", holes_min_spacing_, 1.0);
       nh_.param<std::string>("base_frame", base_frame_, "link_0");
-      nh_.param<double>("max_dist", max_dist_, 0.1);
-      nh_.param<double>("max_angle_dist", max_angle_dist_, 1000);
+      nh_.param<double>("max_dist", max_dist_, 0.05);
+      nh_.param<double>("max_angle_dist", max_angle_dist_, 10000);
       nh_.param<bool>("debug", debug_, true);
 
       // OpenCV windows 
@@ -249,6 +249,7 @@ class FindHolePoseService
       int closest_hole = -1;
       double closest_dist = -1.0, current_dist;
       tf::Transform tf_estimate, tf_computed, tf_diff;
+      tf::Vector3 v_diff;
       tf_estimate.setOrigin(tf::Vector3(req.hole_pose_estimate.position.x, req.hole_pose_estimate.position.y, req.hole_pose_estimate.position.z));
       tf_estimate.setRotation(tf::Quaternion(req.hole_pose_estimate.orientation.x, req.hole_pose_estimate.orientation.y, req.hole_pose_estimate.orientation.z, req.hole_pose_estimate.orientation.w));
       for(int i=0; i<ellipses_pose1.size(); i++){
@@ -256,10 +257,16 @@ class FindHolePoseService
         tf_computed.setOrigin(tf::Vector3(ellipses_pose1[i].pose.position.x, ellipses_pose1[i].pose.position.y, ellipses_pose1[i].pose.position.z));
         tf_computed.setRotation(tf::Quaternion(ellipses_pose1[i].pose.orientation.x, ellipses_pose1[i].pose.orientation.y, ellipses_pose1[i].pose.orientation.z, ellipses_pose1[i].pose.orientation.w));
         
-        tf_diff = tf_estimate.inverseTimes(tf_computed);
-        
-        current_dist = sqrt( pow(tf_diff.getOrigin().getX(),2) + pow(tf_diff.getOrigin().getY(),2) + pow(tf_diff.getOrigin().getZ(),2) );
-        
+	v_diff = tf_computed.getOrigin() - tf_estimate.getOrigin();
+	
+//         tf_diff = tf_estimate.inverseTimes(tf_computed);
+	ROS_WARN_STREAM("tf_computed position is : "<<tf_computed.getOrigin().getX() <<" "<<tf_computed.getOrigin().getY() <<" "<<tf_computed.getOrigin().getZ());
+	ROS_WARN_STREAM("tf_estimate position is D: "<<tf_estimate.getOrigin().getX() <<" "<<tf_estimate.getOrigin().getY() <<" "<<tf_estimate.getOrigin().getZ());
+	ROS_WARN_STREAM("v_diff position is : "<<v_diff.getX() <<" "<<v_diff.getY() <<" "<<v_diff.getZ());
+//         current_dist = sqrt( pow(tf_diff.getOrigin().getX(),2) + pow(tf_diff.getOrigin().getY(),2) + pow(tf_diff.getOrigin().getZ(),2) );
+	current_dist = sqrt( pow(v_diff.getX(),2) + pow(v_diff.getY(),2) /*+ pow(v_diff.getZ(),2)*/ );
+        ROS_WARN_STREAM("current_dist is : "<<current_dist);
+	
         if((current_dist < closest_dist) || (closest_dist < 0) ){
           closest_dist = current_dist;
           closest_hole = i;
@@ -270,7 +277,7 @@ class FindHolePoseService
       /** Check if closest is close enough **/
       if((closest_dist > max_dist_) || (closest_hole < 0)){
         if (debug_){
-          ROS_ERROR("There is no holes close enough to the estimate");
+          ROS_ERROR("There is no holes close enough to the estimate. Closest hole at %f meters", closest_dist);
           cv::waitKey(10);
         }
         locking_data_ = false;
@@ -284,16 +291,20 @@ class FindHolePoseService
       tf_computed.setOrigin(tf::Vector3(ellipses_pose1[closest_hole].pose.position.x, ellipses_pose1[closest_hole].pose.position.y, ellipses_pose1[closest_hole].pose.position.z));
       tf_computed.setRotation(tf::Quaternion(ellipses_pose1[closest_hole].pose.orientation.x, ellipses_pose1[closest_hole].pose.orientation.y, ellipses_pose1[closest_hole].pose.orientation.z, ellipses_pose1[closest_hole].pose.orientation.w));        
       tf_diff = tf_estimate.inverseTimes(tf_computed);
-      tf::Matrix3x3 m(tf_diff.getRotation());
-      m.getRPY(roll, pitch, yaw);
-      orientation_dist1 = sqrt( pow(roll,2) + pow(pitch,2) + pow(yaw,2) );
+//       tf::Matrix3x3 m(tf_diff.getRotation());
+//       m.getRPY(roll, pitch, yaw);
+      ROS_WARN_STREAM("tf_diff quat is : "<<tf_diff.getRotation().x() <<" "<<tf_diff.getRotation().y() <<" "<<tf_diff.getRotation().z() <<" "<<tf_diff.getRotation().w() <<" ");
+      orientation_dist1 = std::sqrt( std::pow(tf_diff.getRotation().x(),2) + std::pow(tf_diff.getRotation().y(),2) + std::pow(tf_diff.getRotation().z(),2)+ std::pow(tf_diff.getRotation().w(),2) );
 
       tf_computed.setOrigin(tf::Vector3(ellipses_pose2[closest_hole].pose.position.x, ellipses_pose2[closest_hole].pose.position.y, ellipses_pose2[closest_hole].pose.position.z));
       tf_computed.setRotation(tf::Quaternion(ellipses_pose2[closest_hole].pose.orientation.x, ellipses_pose2[closest_hole].pose.orientation.y, ellipses_pose2[closest_hole].pose.orientation.z, ellipses_pose2[closest_hole].pose.orientation.w));        
       tf_diff = tf_estimate.inverseTimes(tf_computed);
-      tf::Matrix3x3 m2(tf_diff.getRotation());
-      m2.getRPY(roll, pitch, yaw);
-      orientation_dist2 = sqrt( pow(roll,2) + pow(pitch,2) + pow(yaw,2) );
+//       tf::Matrix3x3 m2(tf_diff.getRotation());
+//       m2.getRPY(roll, pitch, yaw);
+      orientation_dist2 = sqrt( pow(tf_diff.getRotation().x(),2) + pow(tf_diff.getRotation().y(),2) + pow(tf_diff.getRotation().z(),2)+ pow(tf_diff.getRotation().w(),2) );
+      
+      ROS_WARN_STREAM("orientation_dist1 : "<<orientation_dist1);
+      ROS_WARN_STREAM("orientation_dist2 : "<<orientation_dist2);
       
       if (std::min(orientation_dist1,orientation_dist2) < max_angle_dist_){
         
