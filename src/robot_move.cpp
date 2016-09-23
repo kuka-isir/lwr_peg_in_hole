@@ -73,6 +73,8 @@ RobotMove::RobotMove(bool sim) :
     lin_ac.waitForServer();
     ptp_ac.waitForServer();
   }
+  
+  ROS_WARN("ROBOT MOVE READY !");
 }
 
 void RobotMove::getPlanningScene(moveit_msgs::PlanningScene& planning_scene, planning_scene::PlanningScenePtr& full_planning_scene)
@@ -187,7 +189,7 @@ void RobotMove::stopJointTrajectory()
   controller_ac.cancelGoal();
 }
 
-bool RobotMove::moveToJointPosition(const std::vector<double> joint_vals)
+bool RobotMove::moveToJointPosition(const std::vector<double> joint_vals,double velocity_percent)
 {
   if (sim_){
   //   getPlanningScene(planning_scene_msg_, full_planning_scene_);
@@ -208,6 +210,13 @@ bool RobotMove::moveToJointPosition(const std::vector<double> joint_vals)
   }else{
     std::vector<unsigned char> mask(joint_vals.size(), 1);
     krl_msgs::PTPGoal ptp_goal;
+    ptp_goal.RPY_mask.x = 1;
+    ptp_goal.RPY_mask.y = 1;
+    ptp_goal.RPY_mask.z = 1;
+    ptp_goal.XYZ_mask.x = 1;
+    ptp_goal.XYZ_mask.y = 1;
+    ptp_goal.XYZ_mask.z = 1;
+    ptp_goal.vel_percent = velocity_percent;
 
     std::vector<float> goal_vals;
     for(int i = 0; i<joint_vals.size();i++)
@@ -216,28 +225,16 @@ bool RobotMove::moveToJointPosition(const std::vector<double> joint_vals)
     ptp_goal.ptp_goal = goal_vals;
     ptp_goal.ptp_input_type = krl_msgs::PTPGoal::Joint;
     ptp_goal.ptp_mask = mask;
-    ptp_goal.vel_percent = 10;
     ptp_goal.use_radians = true;
     ptp_goal.use_relative = false;
 
-    ptp_ac.sendGoal(ptp_goal);
-    bool finished_before_timeout = ptp_ac.waitForResult(ros::Duration(30.0));
-
-    if (finished_before_timeout)
-    {
-      actionlib::SimpleClientGoalState state = ptp_ac.getState();
-      ROS_INFO("PTP action finished: %s",state.toString().c_str());
-      return state == actionlib::SimpleClientGoalState::SUCCEEDED;
-    }
-    else{
-      ROS_INFO("PTP action did not finish before the time out.");
-      return false;
-    }
+    ptp_ac.sendGoalAndWait(ptp_goal);
+    return true;
   }
 
 }
 
-bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
+bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose,double velocity_percent)
 {
 
 //   getPlanningScene(planning_scene_msg_, full_planning_scene_);
@@ -278,7 +275,16 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
   else{
 
     krl_msgs::LINGoal lin_goal;
+    lin_goal.RPY_mask.x = 1;
+    lin_goal.RPY_mask.y = 1;
+    lin_goal.RPY_mask.z = 1;
+    lin_goal.XYZ_mask.x = 1;
+    lin_goal.XYZ_mask.y = 1;
+    lin_goal.XYZ_mask.z = 1;
+    lin_goal.vel_percent = velocity_percent;
     lin_goal.use_relative = false;
+    lin_goal.in_tool_frame = false;
+    lin_goal.stop_on_force = false;
     geometry_msgs::Vector3 xyz, rpy;
     xyz.x = pose.position.x;
     xyz.y = pose.position.y;
@@ -291,24 +297,13 @@ bool RobotMove::moveToCartesianPose(const geometry_msgs::Pose pose)
 
     lin_goal.RPY = rpy;
 
-    lin_ac.sendGoal(lin_goal);
-    bool finished_before_timeout = lin_ac.waitForResult(ros::Duration(30.0));
-
-    if (finished_before_timeout)
-    {
-      actionlib::SimpleClientGoalState state = lin_ac.getState();
-      ROS_INFO("LIN action finished: %s",state.toString().c_str());
-      return state == actionlib::SimpleClientGoalState::SUCCEEDED;
-    }
-    else{
-      ROS_INFO("LIN action did not finish before the time out.");
-      return false;
-    }
+    lin_ac.sendGoalAndWait(lin_goal);
+    return true;
   }
 
 }
 
-bool RobotMove::moveToCartesianPoseUsingPTP_KUKA_Conventions(const geometry_msgs::Vector3& XYZ_mm,const geometry_msgs::Vector3& ABC_deg,bool use_relative)
+bool RobotMove::moveToCartesianPoseUsingPTP_KUKA_Conventions(const geometry_msgs::Vector3& XYZ_mm,const geometry_msgs::Vector3& ABC_deg,bool use_relative,double velocity_percent)
 {
   if(sim_){
     ROS_ERROR("Not Implemented");
@@ -316,6 +311,13 @@ bool RobotMove::moveToCartesianPoseUsingPTP_KUKA_Conventions(const geometry_msgs
   }else{
 
     krl_msgs::PTPGoal ptp_goal;
+    ptp_goal.RPY_mask.x = 1;
+    ptp_goal.RPY_mask.y = 1;
+    ptp_goal.RPY_mask.z = 1;
+    ptp_goal.XYZ_mask.x = 1;
+    ptp_goal.XYZ_mask.y = 1;
+    ptp_goal.XYZ_mask.z = 1;
+    ptp_goal.vel_percent = velocity_percent;
 
     geometry_msgs::Vector3 xyz, rpy;
     xyz.x = XYZ_mm.x/1000.0;
@@ -329,27 +331,15 @@ bool RobotMove::moveToCartesianPoseUsingPTP_KUKA_Conventions(const geometry_msgs
     ptp_goal.XYZ = xyz;
     ptp_goal.RPY = rpy;
     ptp_goal.ptp_input_type = krl_msgs::PTPGoal::Cartesian;
-    ptp_goal.vel_percent = 10;
     ptp_goal.use_radians = false;
     ptp_goal.use_relative = use_relative;
 
-    ptp_ac.sendGoal(ptp_goal);
-    bool finished_before_timeout = ptp_ac.waitForResult(ros::Duration(30.0));
-
-    if (finished_before_timeout)
-    {
-      actionlib::SimpleClientGoalState state = ptp_ac.getState();
-      ROS_INFO("PTP action finished: %s",state.toString().c_str());
-      return state == actionlib::SimpleClientGoalState::SUCCEEDED;
-    }
-    else{
-      ROS_INFO("PTP action did not finish before the time out.");
-      return false;
-    }
+    ptp_ac.sendGoalAndWait(ptp_goal);
+    return true;
   }
 }
 
-bool RobotMove::moveToCartesianPoseUsingPTP(const geometry_msgs::Pose pose,bool use_relative)
+bool RobotMove::moveToCartesianPoseUsingPTP(const geometry_msgs::Pose pose,bool use_relative,double velocity_percent)
 {
 
 //   getPlanningScene(planning_scene_msg_, full_planning_scene_);
@@ -360,6 +350,13 @@ bool RobotMove::moveToCartesianPoseUsingPTP(const geometry_msgs::Pose pose,bool 
   }else{
 
     krl_msgs::PTPGoal ptp_goal;
+    ptp_goal.RPY_mask.x = 1;
+    ptp_goal.RPY_mask.y = 1;
+    ptp_goal.RPY_mask.z = 1;
+    ptp_goal.XYZ_mask.x = 1;
+    ptp_goal.XYZ_mask.y = 1;
+    ptp_goal.XYZ_mask.z = 1;
+    ptp_goal.vel_percent = velocity_percent;
 
     geometry_msgs::Vector3 xyz, rpy;
     xyz.x = pose.position.x;
@@ -374,28 +371,16 @@ bool RobotMove::moveToCartesianPoseUsingPTP(const geometry_msgs::Pose pose,bool 
     ptp_goal.XYZ = xyz;
     ptp_goal.RPY = rpy;
     ptp_goal.ptp_input_type = krl_msgs::PTPGoal::Cartesian;
-    ptp_goal.vel_percent = 10;
     ptp_goal.use_radians = true;
     ptp_goal.use_relative = use_relative;
 
-    ptp_ac.sendGoal(ptp_goal);
-    bool finished_before_timeout = ptp_ac.waitForResult(ros::Duration(30.0));
-
-    if (finished_before_timeout)
-    {
-      actionlib::SimpleClientGoalState state = ptp_ac.getState();
-      ROS_INFO("PTP action finished: %s",state.toString().c_str());
-      return state == actionlib::SimpleClientGoalState::SUCCEEDED;
-    }
-    else{
-      ROS_INFO("PTP action did not finish before the time out.");
-      return false;
-    }
+    ptp_ac.sendGoalAndWait(ptp_goal);
+    return true;
   }
 
 }
 
-bool RobotMove::moveLinRel(const geometry_msgs::Pose pose)
+bool RobotMove::moveLinRel(const geometry_msgs::Pose pose,double velocity_percent)
 {
 
   if(sim_){
@@ -404,7 +389,17 @@ bool RobotMove::moveLinRel(const geometry_msgs::Pose pose)
   }
   else{
     krl_msgs::LINGoal lin_goal;
+    lin_goal.RPY_mask.x = 1;
+    lin_goal.RPY_mask.y = 1;
+    lin_goal.RPY_mask.z = 1;
+    lin_goal.XYZ_mask.x = 1;
+    lin_goal.XYZ_mask.y = 1;
+    lin_goal.XYZ_mask.z = 1;
+    lin_goal.vel_percent = velocity_percent;
     lin_goal.use_relative = true;
+    lin_goal.in_tool_frame = false;
+    lin_goal.stop_on_force = false;
+    lin_goal.max_allowed_force = 1.0;
     geometry_msgs::Vector3 xyz, rpy;
     xyz.x = pose.position.x;
     xyz.y = pose.position.y;
@@ -417,21 +412,117 @@ bool RobotMove::moveLinRel(const geometry_msgs::Pose pose)
 
     lin_goal.RPY = rpy;
 
-    lin_ac.sendGoal(lin_goal);
-    bool finished_before_timeout = lin_ac.waitForResult(ros::Duration(30.0));
-
-    if (finished_before_timeout)
-    {
-      actionlib::SimpleClientGoalState state = lin_ac.getState();
-      ROS_INFO("LIN action finished: %s",state.toString().c_str());
-      return state == actionlib::SimpleClientGoalState::SUCCEEDED;
-    }
-    else{
-      ROS_INFO("LIN action did not finish before the time out.");
-      return false;
-    }
+    lin_ac.sendGoalAndWait(lin_goal);
+    return true;
   }
 
+}
+
+bool RobotMove::moveLinRelInTool(const geometry_msgs::Pose pose,double velocity_percent)
+{
+
+  if(sim_){
+    ROS_ERROR("Functions not available on sim yet");
+    return false;
+  }
+  else{
+    krl_msgs::LINGoal lin_goal;
+    lin_goal.RPY_mask.x = 1;
+    lin_goal.RPY_mask.y = 1;
+    lin_goal.RPY_mask.z = 1;
+    lin_goal.XYZ_mask.x = 1;
+    lin_goal.XYZ_mask.y = 1;
+    lin_goal.XYZ_mask.z = 1;
+    lin_goal.vel_percent = velocity_percent;
+    lin_goal.use_relative = true;
+    lin_goal.in_tool_frame = true;
+    lin_goal.stop_on_force = false;
+    lin_goal.max_allowed_force = 1.0;
+    geometry_msgs::Vector3 xyz, rpy;
+    xyz.x = pose.position.x;
+    xyz.y = pose.position.y;
+    xyz.z = pose.position.z;
+    lin_goal.XYZ = xyz;
+    tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+    tf::Matrix3x3 m(q);
+
+    m.getRPY(rpy.x, rpy.y, rpy.z);
+
+    lin_goal.RPY = rpy;
+
+    std::cout << "Sending " << lin_goal;
+    
+    lin_ac.sendGoalAndWait(lin_goal);
+    return true;
+  }
+
+}
+
+bool RobotMove::moveAPlat(double velocity_percent)
+{
+
+  if(sim_){
+    ROS_ERROR("Function not available on sim yet");
+    return false;
+  }
+  else{
+    geometry_msgs::Pose current_pose;
+    getCurrentCartesianPose(current_pose, base_frame_);
+    
+    krl_msgs::LINGoal lin_goal;
+    lin_goal.RPY_mask.x = 1;
+    lin_goal.RPY_mask.y = 1;
+    lin_goal.RPY_mask.z = 0;
+    lin_goal.XYZ_mask.x = 0;
+    lin_goal.XYZ_mask.y = 0;
+    lin_goal.XYZ_mask.z = 0;
+    lin_goal.vel_percent = velocity_percent;
+    lin_goal.use_relative = false;
+    lin_goal.in_tool_frame = false;
+    lin_goal.stop_on_force = false;
+    geometry_msgs::Vector3 rpy;
+    tf::Quaternion q(current_pose.orientation.x, current_pose.orientation.y, current_pose.orientation.z, current_pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    m.getRPY(rpy.x, rpy.y, rpy.z);
+
+    rpy.x = M_PI;
+    rpy.y = 0.0;//M_PI;
+    //rpy.z = 0.0;
+    lin_goal.RPY = rpy;
+
+    lin_ac.sendGoalAndWait(lin_goal);
+    return true;
+  }
+}
+
+bool RobotMove::moveToHeight(double height,double velocity_percent,bool stop_on_force ,double max_force )
+{
+
+  if(sim_){
+    ROS_ERROR("Function not available on sim yet");
+    return false;
+  }
+  else{
+    geometry_msgs::Pose current_pose;
+    getCurrentCartesianPose(current_pose, base_frame_);
+    
+    krl_msgs::LINGoal lin_goal;
+    lin_goal.RPY_mask.x = 0;
+    lin_goal.RPY_mask.y = 0;
+    lin_goal.RPY_mask.z = 0;
+    lin_goal.XYZ_mask.x = 0;
+    lin_goal.XYZ_mask.y = 0;
+    lin_goal.XYZ_mask.z = 1;
+    lin_goal.vel_percent = velocity_percent;
+    lin_goal.use_relative = false;
+    lin_goal.in_tool_frame = false;
+    lin_goal.stop_on_force = stop_on_force;
+    lin_goal.max_allowed_force = max_force;
+    lin_goal.XYZ.z = height;
+
+    lin_ac.sendGoalAndWait(lin_goal);
+    return true;
+  }
 }
 
 void RobotMove::emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg)
@@ -563,11 +654,23 @@ bool RobotMove::moveAboveObjectHole(const std::string obj_name, const int hole_n
   target_pose.position.x = object_transform.getOrigin().getX();
   target_pose.position.y = object_transform.getOrigin().getY();
   target_pose.position.z = object_transform.getOrigin().getZ();
-  target_pose.orientation.x = object_transform.getRotation().getX();
-  target_pose.orientation.y = object_transform.getRotation().getY();
-  target_pose.orientation.z = object_transform.getRotation().getZ();
-  target_pose.orientation.w = object_transform.getRotation().getW();
+//   target_pose.orientation.x = object_transform.getRotation().getX();
+//   target_pose.orientation.y = object_transform.getRotation().getY();
+//   target_pose.orientation.z = object_transform.getRotation().getZ();
+//   target_pose.orientation.w = object_transform.getRotation().getW();
 
+  // HACK !!!!!!!!!!
+  tf::Quaternion perfect_orientation;
+  perfect_orientation.setRPY(-M_PI,0,-(M_PI/2.0 + 20*M_PI/180.0));
+  target_pose.orientation.x = perfect_orientation.x();
+  target_pose.orientation.y = perfect_orientation.y();
+  target_pose.orientation.z = perfect_orientation.z();
+  target_pose.orientation.w = perfect_orientation.w();
+
+  ROS_WARN_STREAM("Moving to ("
+    <<target_pose.position.x <<","
+    <<target_pose.position.y <<","
+    <<target_pose.position.z<<")");
   return this->moveToCartesianPose(target_pose);
 }
 

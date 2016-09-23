@@ -62,22 +62,54 @@ public:
   void stopJointTrajectory();
 
   // The robot tries to go to the passed joint values
-  bool moveToJointPosition(const std::vector<double> target_joints);
+  bool moveToJointPosition(const std::vector<double> target_joints,double velocity_percent = 30.0);
 
   // The robot tries to go to the (x,y,z) position
-  bool moveToCartesianPose(const geometry_msgs::Pose target_pose);
+  bool moveToCartesianPose(const geometry_msgs::Pose target_pose,double velocity_percent = 30.0);
 
   // The robot tries to go to the (x,y,z) position
   // bool moveToCartesianPose(const geometry_msgs::Vector3& XYZ_mm,const geometry_msgs::Vector3& ABC_deg,bool use_relative = false);
 
   // The robot tries to go to the (x,y,z) position
-  bool moveToCartesianPoseUsingPTP(const geometry_msgs::Pose target_pose,bool use_relative = false);
+  bool moveToCartesianPoseUsingPTP(const geometry_msgs::Pose target_pose,bool use_relative = false,double velocity_percent = 30.0);
 
   // The robot tries to go to the (x,y,z) position - KUKA Conventions
-  bool moveToCartesianPoseUsingPTP_KUKA_Conventions(const geometry_msgs::Vector3& XYZ_mm,const geometry_msgs::Vector3& ABC_deg,bool use_relative = false);
+  bool moveToCartesianPoseUsingPTP_KUKA_Conventions(const geometry_msgs::Vector3& XYZ_mm,const geometry_msgs::Vector3& ABC_deg,bool use_relative = false,double velocity_percent = 30.0);
 
-  // Relative linear movement
-  bool moveLinRel(const geometry_msgs::Pose pose);
+  //TODO: Implement these functions
+  // // Execute a LIN or LIN_REL command
+  // bool moveLIN(
+  //   const geometry_msgs::Vector3& XYZ_m,
+  //   const geometry_msgs::Vector3& XYZ_mask,
+  //   const geometry_msgs::Vector3& RPY_rad,
+  //   const geometry_msgs::Vector3& RPY_mask,
+  //   bool relative,
+  //   bool in_tool_frame,
+  //   double velocity_percent);
+  //
+  // // Execute a PTP, PTP_REL
+  // void movePTP(
+  //   const std::vector<double>& joint_command_rad,
+  //   const std::vector<bool>& joint_mask,
+  //   bool relative = false,
+  //   double velocity_percent = 50.0);
+  //
+  // // Execute a PTP{POS}, PTP_REL{POS}
+  // void movePTP(
+  //   const geometry_msgs::Vector3& XYZ_m,
+  //   const geometry_msgs::Vector3& XYZ_mask,
+  //   const geometry_msgs::Vector3& RPY_rad,
+  //   const geometry_msgs::Vector3& RPY_mask,
+  //   bool relative = false,
+  //   double velocity_percent = 50.0);
+
+  bool moveLinRel(const geometry_msgs::Pose pose,double velocity_percent = 30.0);
+
+  bool moveLinRelInTool(const geometry_msgs::Pose pose,double velocity_percent = 30.0);
+  
+  bool moveAPlat(double velocity_percent = 30.0);
+  
+  bool moveToHeight(double height,double velocity_percent = 30.0,bool stop_on_force = false,double max_force = 2.0);
 
   // Emergency callback
   void emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg);
