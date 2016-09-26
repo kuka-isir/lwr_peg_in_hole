@@ -12,16 +12,21 @@ public:
   {
     act_srv_.start();
     pub_cmd_ = nh_.advertise<std_msgs::Float64>("/screwdriver/effort_controller/command", 1);
+    pub_filter_val_ = nh_.advertise<std_msgs::Float64>("/screwdriver/effort_controller/filter", 1);
     stopping_cmd_.data = 0.0;
     opening_cmd_.data = -10000.0;
     closing_cmd_.data = 10000.0;
     ROS_INFO("screwdriver action server ready !");
+    
+    alpha_ = 0.95;
+    time_min_ = 3.0;
+    time_max_ = 35.0;
   }
 
 protected:
   ros::NodeHandle nh_;
-  ros::Publisher pub_cmd_;
-  double current_effort_;
+  ros::Publisher pub_cmd_, pub_filter_val_;
+  double current_effort_, filtered_val_, alpha_, time_min_, time_max_;
   
   std_msgs::Float64 opening_cmd_, closing_cmd_, stopping_cmd_;
 
@@ -32,14 +37,23 @@ protected:
   void executeCB(const lwr_peg_in_hole::ScrewdriverGoalConstPtr& goal)
   {
     ros::Subscriber effort_sub_ = nh_.subscribe("/screwdriver/joint_states", 1, &ScrewdriverActionServer::effortCB,this);
+    filtered_val_ = 0.0;
     
     /** Opening fastener **/
     if(goal->opening){
       
       pub_cmd_.publish(opening_cmd_);
       
-      // Opening for 45s
-      usleep(1000*1000*45);
+      
+      ros::Time begin = ros::Time::now();
+      ros::Duration spent = ros::Duration(0.0);
+      while((ros::ok() && spent.toSec()<time_min_ )
+            || (ros::ok() && spent.toSec()<time_max_ && filtered_val_ > -3.5 ) ){
+        // Closing for 1s
+        spent = ros::Time::now() - begin;
+        usleep(1000*1000*1);
+        ros::spinOnce();
+      }
       
       pub_cmd_.publish(stopping_cmd_);
       
@@ -51,18 +65,18 @@ protected:
     }else{
       pub_cmd_.publish(closing_cmd_);
       
-      // Closing for 1s
-      usleep(1000*1000*1);
-      ros::spinOnce();
-      
-      while(ros::ok() && current_effort_ < 9.0){
+      ros::Time begin = ros::Time::now();
+      ros::Duration spent = ros::Duration(0.0);
+      while((ros::ok() && spent.toSec()<time_min_ )
+            || (ros::ok() && spent.toSec()<time_max_ && filtered_val_ < 9.5 ) ){
         // Closing for 1s
+        spent = ros::Time::now() - begin;
         usleep(1000*1000*1);
         ros::spinOnce();
       }
       
-      // Closing for 5s
-      usleep(1000*1000*5);
+      // Closing for 8s
+      usleep(1000*1000*8);
       ros::spinOnce();
       
       pub_cmd_.publish(stopping_cmd_);
@@ -76,6 +90,10 @@ protected:
   void effortCB(const sensor_msgs::JointState::ConstPtr& msg)
   {
     current_effort_ = msg->effort[0];
+    filtered_val_ = filtered_val_*alpha_ + current_effort_*(1-alpha_);
+    std_msgs::Float64 filter;
+    filter.data = filtered_val_;
+    pub_filter_val_.publish(filter);
   }
 
 };
