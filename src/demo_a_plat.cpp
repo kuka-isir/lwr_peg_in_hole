@@ -99,13 +99,12 @@ int main(int argc, char **argv)
   get_fastener.position.z = 0.092;
   robot_move.moveLinRelInTool(get_fastener, 2.0);
   
-//   usleep(1E6);
-//   ROS_INFO("Putting fastener ...");
-//   lwr_peg_in_hole::ScrewdriverGoal open_screwdriver_goal;
-//   open_screwdriver_goal.opening = 1;
-//   screwdriver_ac.sendGoalAndWait(open_screwdriver_goal);
-//   usleep(1E6);
-//   ROS_INFO("Fastener in place !");
+  ROS_INFO("Putting fastener ...");
+  lwr_peg_in_hole::ScrewdriverGoal open_screwdriver_goal;
+  open_screwdriver_goal.opening = 1;
+  screwdriver_ac.sendGoalAndWait(open_screwdriver_goal);
+  usleep(5E5);
+  ROS_INFO("Fastener in place !");
   
   // Move up
   geometry_msgs::Pose move_up;
@@ -167,6 +166,14 @@ int main(int argc, char **argv)
   robot_move.moveToHeight(0.16,10.0);
   
   
+  
+  
+  // Save fastener location
+  std::vector<double> above_first_fastener;  
+  robot_move.getCurrentJointPosition(above_first_fastener);
+  
+  
+  
   /////// Second fastener ///////
   
   // Go to start position
@@ -178,13 +185,12 @@ int main(int argc, char **argv)
   // Get fastener
   robot_move.moveLinRelInTool(get_fastener, 2.0);
   
-//   usleep(1E6);
-//   ROS_INFO("Putting fastener ...");
+  ROS_INFO("Putting fastener ...");
 //   lwr_peg_in_hole::ScrewdriverGoal open_screwdriver_goal;
-//   open_screwdriver_goal.opening = 1;
-//   screwdriver_ac.sendGoalAndWait(open_screwdriver_goal);
-//   usleep(1E6);
-//   ROS_INFO("Fastener in place !");
+  open_screwdriver_goal.opening = 1;
+  screwdriver_ac.sendGoalAndWait(open_screwdriver_goal);
+  usleep(5E5);
+  ROS_INFO("Fastener in place !");
   
   // Move up
   robot_move.moveLinRelInTool(move_up, 10.0);
@@ -238,6 +244,96 @@ int main(int argc, char **argv)
   // Move up
   robot_move.moveToHeight(0.16,10.0);
   
+  
+  
+  // Save fastener location
+  std::vector<double> above_second_fastener;  
+  robot_move.getCurrentJointPosition(above_second_fastener);
+  
+  
+  
+  /////// Taking back the first fastener /////
+  ROS_INFO("Go to start");
+  robot_move.moveToStart();
+  
+  ROS_INFO("Go back to fastener !");
+  robot_move.moveToJointPosition(above_first_fastener);
+  
+  ROS_INFO("Pick up fastener");
+  robot_move.moveToHeight(0.0,1.0,true,40.0);
+  
+  ROS_INFO("Unscrewing fastener...");
+  screwdriver_goal.opening = 1;
+  screwdriver_ac.sendGoalAndWait(screwdriver_goal);
+  ROS_INFO("Fastener unscrewed !");
+  
+  ROS_INFO("Go up");
+  robot_move.moveToHeight(0.2,10.0);
+  
+  // Go to start position
+  robot_move.moveToStart();
+  
+  // Go to first_fastener_up
+  robot_move.moveToJointPosition(first_fastener_up);
+  
+  // Get fastener
+  get_fastener.orientation.w = 1.0;
+  get_fastener.position.z = 0.092;
+  robot_move.moveLinRelInTool(get_fastener, 2.0);
+  
+  ROS_INFO("Putting fastener ...");
+  lwr_peg_in_hole::ScrewdriverGoal close_screwdriver_goal;
+  close_screwdriver_goal.opening = 0;
+  screwdriver_ac.sendGoalAndWait(close_screwdriver_goal);
+  usleep(1E6);
+  ROS_INFO("Fastener in place !");
+  
+  // Move up
+  move_up.orientation.w = 1.0;
+  move_up.position.z = -0.09;
+  robot_move.moveLinRelInTool(move_up, 10.0);
+  
+  /////// Taking back the second fastener /////
+  ROS_INFO("Go to start");
+  robot_move.moveToStart();
+  
+  ROS_INFO("Go back to fastener !");
+  robot_move.moveToJointPosition(above_second_fastener);
+  
+  ROS_INFO("Pick up fastener");
+  robot_move.moveToHeight(0.0,1.0,true,40.0);
+  
+  ROS_INFO("Unscrewing fastener...");
+  screwdriver_goal.opening = 1;
+  screwdriver_ac.sendGoalAndWait(screwdriver_goal);
+  ROS_INFO("Fastener unscrewed !");
+  
+  ROS_INFO("Go up");
+  robot_move.moveToHeight(0.2,10.0);
+  
+  // Go to start position
+  robot_move.moveToStart();
+  
+  // Go to first_fastener_up
+  robot_move.moveToJointPosition(second_fastener_up);
+  
+  // Get fastener
+  get_fastener.orientation.w = 1.0;
+  get_fastener.position.z = 0.092;
+  robot_move.moveLinRelInTool(get_fastener, 2.0);
+  
+  ROS_INFO("Putting fastener ...");
+  close_screwdriver_goal.opening = 0;
+  screwdriver_ac.sendGoalAndWait(close_screwdriver_goal);
+  usleep(1E6);
+  ROS_INFO("Fastener in place !");
+  
+  // Move up
+  move_up.orientation.w = 1.0;
+  move_up.position.z = -0.09;
+  robot_move.moveLinRelInTool(move_up, 10.0);
+  
+  // Go to start position
   robot_move.moveToStart();
   
   ros::shutdown();
