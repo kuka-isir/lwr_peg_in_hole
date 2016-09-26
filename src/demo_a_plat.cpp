@@ -21,7 +21,7 @@ int main(int argc, char **argv)
   krl_msgs::SetToolResponse tool_resp;
   tool_req.tool_number = 10;
   ros::service::call("/lwr_krl_tool/set_tool",tool_req,tool_resp);
-  std::cout << "Trying to set tool "<<tool_req.tool_number<<std::endl;;
+  ROS_INFO("Trying to set tool %d", tool_req.tool_number);
   
   // Set up services
   ros::ServiceClient up_client = nh.serviceClient<lwr_peg_in_hole::UpdateSceneService>("update_scene");
@@ -87,11 +87,10 @@ int main(int argc, char **argv)
   
   /*********** DEMO script *****************/
   // Go to start position
-  robot_move.moveToStart();
+  robot_move.moveToStart(100.0);
   
   // Go to first_fastener_up
-  robot_move.moveToJointPosition(first_fastener_up);
-//   robot_move.moveToJointPosition(second_fastener_up);
+  robot_move.moveToJointPosition(first_fastener_up, 100.0);
   
   // Get fastener
   geometry_msgs::Pose get_fastener;
@@ -113,7 +112,7 @@ int main(int argc, char **argv)
   robot_move.moveLinRelInTool(move_up, 10.0);
   
   // Go to lookup position
-  robot_move.moveToJointPosition(look_up1);
+  robot_move.moveToJointPosition(look_up1, 100.0);
   
   // Wait 1s
   usleep(1E6);
@@ -134,15 +133,15 @@ int main(int argc, char **argv)
 //   }
   
   // Move to above first hole
-  robot_move.moveAboveObjectHole("plaque2", 0);
+  robot_move.moveAboveObjectHole("plaque2", 0, 100.0);
   
   // Move A Plat
-  robot_move.moveAPlat(30.0);
+  robot_move.moveAPlat(100.0);
   
   // Set bias of ati_sensor
   ros::service::call("/ft_sensor/set_bias",empty_req,empty_resp);
   
-  // Move A Plat
+  // Move to height 0.12
   robot_move.moveToHeight(0.12,10.0);
   
   usleep(2E6);
@@ -177,10 +176,10 @@ int main(int argc, char **argv)
   /////// Second fastener ///////
   
   // Go to start position
-  robot_move.moveToStart();
+  robot_move.moveToStart(100.0);
   
   // Go to first_fastener_up
-  robot_move.moveToJointPosition(second_fastener_up);
+  robot_move.moveToJointPosition(second_fastener_up, 100.0);
   
   // Get fastener
   robot_move.moveLinRelInTool(get_fastener, 2.0);
@@ -196,7 +195,7 @@ int main(int argc, char **argv)
   robot_move.moveLinRelInTool(move_up, 10.0);
   
   // Go to lookup position
-  robot_move.moveToJointPosition(look_up1);
+  robot_move.moveToJointPosition(look_up1, 100.0);
   
   // Wait 1s
   usleep(1E6);
@@ -217,10 +216,10 @@ int main(int argc, char **argv)
 //   }
   
   // Move to above first hole
-  robot_move.moveAboveObjectHole("plaque2", 1);
+  robot_move.moveAboveObjectHole("plaque2", 1, 100.0);
   
   // Move A Plat
-  robot_move.moveAPlat(30.0);
+  robot_move.moveAPlat(100.0);
   
   // Set bias of ati_sensor
   ros::service::call("/ft_sensor/set_bias",empty_req,empty_resp);
@@ -254,10 +253,10 @@ int main(int argc, char **argv)
   
   /////// Taking back the first fastener /////
   ROS_INFO("Go to start");
-  robot_move.moveToStart();
+  robot_move.moveToStart(100.0);
   
   ROS_INFO("Go back to fastener !");
-  robot_move.moveToJointPosition(above_first_fastener);
+  robot_move.moveToJointPosition(above_first_fastener, 100.0);
   
   ROS_INFO("Pick up fastener");
   robot_move.moveToHeight(0.0,1.0,true,40.0);
@@ -271,10 +270,10 @@ int main(int argc, char **argv)
   robot_move.moveToHeight(0.2,10.0);
   
   // Go to start position
-  robot_move.moveToStart();
+  robot_move.moveToStart(100.0);
   
   // Go to first_fastener_up
-  robot_move.moveToJointPosition(first_fastener_up);
+  robot_move.moveToJointPosition(first_fastener_up, 100.0);
   
   // Get fastener
   get_fastener.orientation.w = 1.0;
@@ -295,10 +294,10 @@ int main(int argc, char **argv)
   
   /////// Taking back the second fastener /////
   ROS_INFO("Go to start");
-  robot_move.moveToStart();
+  robot_move.moveToStart(100.0);
   
   ROS_INFO("Go back to fastener !");
-  robot_move.moveToJointPosition(above_second_fastener);
+  robot_move.moveToJointPosition(above_second_fastener, 100.0);
   
   ROS_INFO("Pick up fastener");
   robot_move.moveToHeight(0.0,1.0,true,40.0);
@@ -312,10 +311,10 @@ int main(int argc, char **argv)
   robot_move.moveToHeight(0.2,10.0);
   
   // Go to start position
-  robot_move.moveToStart();
+  robot_move.moveToStart(100.0);
   
   // Go to first_fastener_up
-  robot_move.moveToJointPosition(second_fastener_up);
+  robot_move.moveToJointPosition(second_fastener_up, 100.0);
   
   // Get fastener
   get_fastener.orientation.w = 1.0;
@@ -334,7 +333,7 @@ int main(int argc, char **argv)
   robot_move.moveLinRelInTool(move_up, 10.0);
   
   // Go to start position
-  robot_move.moveToStart();
+  robot_move.moveToStart(100.0);
   
   ros::shutdown();
   return 0;

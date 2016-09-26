@@ -445,12 +445,8 @@ bool RobotMove::moveLinRelInTool(const geometry_msgs::Pose pose,double velocity_
     lin_goal.XYZ = xyz;
     tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
     tf::Matrix3x3 m(q);
-
     m.getRPY(rpy.x, rpy.y, rpy.z);
-
     lin_goal.RPY = rpy;
-
-    std::cout << "Sending " << lin_goal;
     
     lin_ac.sendGoalAndWait(lin_goal);
     return true;
@@ -530,7 +526,7 @@ void RobotMove::emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg)
   emergency_stopped_ = msg->data;
 }
 
-bool RobotMove::moveToStart()
+bool RobotMove::moveToStart(double velocity_percent)
 {
   if(sim_){
     group_->setNamedTarget("start");
@@ -561,7 +557,7 @@ bool RobotMove::moveToStart()
     start.push_back(0.);
     start.push_back(1.3884);
     start.push_back(0.);
-    return moveToJointPosition(start);
+    return moveToJointPosition(start, velocity_percent);
   }
 }
 
@@ -607,7 +603,7 @@ moveit_msgs::CollisionObjectPtr RobotMove::getCollisionObject(std::string object
   return moveit_msgs::CollisionObjectPtr();
 }
 
-bool RobotMove::moveAboveObjectHole(const std::string obj_name, const int hole_nb)
+bool RobotMove::moveAboveObjectHole(const std::string obj_name, const int hole_nb, double velocity_percent)
 {
   ROS_INFO_STREAM("Moving above hole "<<hole_nb<<" of object "<<obj_name);
   moveit_msgs::CollisionObjectPtr coll_obj = getCollisionObject(obj_name);
@@ -667,11 +663,7 @@ bool RobotMove::moveAboveObjectHole(const std::string obj_name, const int hole_n
   target_pose.orientation.z = perfect_orientation.z();
   target_pose.orientation.w = perfect_orientation.w();
 
-  ROS_WARN_STREAM("Moving to ("
-    <<target_pose.position.x <<","
-    <<target_pose.position.y <<","
-    <<target_pose.position.z<<")");
-  return this->moveToCartesianPose(target_pose);
+  return this->moveToCartesianPose(target_pose, velocity_percent);
 }
 
 bool RobotMove::loadHolesLocation(const std::string obj_name)

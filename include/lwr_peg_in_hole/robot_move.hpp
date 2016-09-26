@@ -115,7 +115,7 @@ public:
   void emergStoppedCallback(const std_msgs::Bool::ConstPtr& msg);
 
     // The robot tries to go to its home position
-  bool moveToStart();
+  bool moveToStart(double velocity_percent = 30.0);
 
   // The robot tries to go to a random target
   bool moveToRandomTarget();
@@ -127,7 +127,7 @@ public:
   bool loadHolesLocation(const std::string obj_name);
 
   // Move above a specific hole of the specified object
-  bool moveAboveObjectHole(const std::string obj_name, const int hole_nb);
+  bool moveAboveObjectHole(const std::string obj_name, const int hole_nb, double velocity_percent = 30.0);
 
 
 
