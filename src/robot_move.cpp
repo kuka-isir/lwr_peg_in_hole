@@ -549,14 +549,10 @@ bool RobotMove::moveToStart(double velocity_percent)
     }
   }
   else{
+    double start_tab[] = {M_PI/2.0, 0.0, 0.0, -M_PI/2.0, 0.0, M_PI/2.0, 0.0};
     std::vector<double> start;
-    start.push_back(1.6002);
-    start.push_back(-0.0471);
-    start.push_back(-0.3334);
-    start.push_back(-1.6943);
-    start.push_back(0.);
-    start.push_back(1.3884);
-    start.push_back(0.);
+    start.assign(start_tab,start_tab+7);
+    
     return moveToJointPosition(start, velocity_percent);
   }
 }
@@ -649,7 +645,9 @@ bool RobotMove::moveAboveObjectHole(const std::string obj_name, const int hole_n
 
   target_pose.position.x = object_transform.getOrigin().getX();
   target_pose.position.y = object_transform.getOrigin().getY();
-  target_pose.position.z = object_transform.getOrigin().getZ();
+  // HACK !!!!!!!!!!
+//   target_pose.position.z = object_transform.getOrigin().getZ();
+  target_pose.position.z = 0.2;
 //   target_pose.orientation.x = object_transform.getRotation().getX();
 //   target_pose.orientation.y = object_transform.getRotation().getY();
 //   target_pose.orientation.z = object_transform.getRotation().getZ();
