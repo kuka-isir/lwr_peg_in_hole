@@ -1,0 +1,10 @@
+<launch>
+  
+  <node name="update_scene_service" pkg="lwr_peg_in_hole" type="update_scene_service" output="screen" />
+  <node name="screwdriver_action_server" pkg="lwr_peg_in_hole" type="screwdriver_action_server" output="screen" />
+  <node name="hole_visual_servoing_action_server" pkg="lwr_peg_in_hole" type="hole_visual_servoing_action_server" output="screen" />  
+  
+  <include file="$(find lwr_peg_in_hole)/launch/kuka_cam.launch" />
+  <include file="$(find lwr_peg_in_hole)/launch/find_objects_w_tags.launch" />
+
+</launch>
