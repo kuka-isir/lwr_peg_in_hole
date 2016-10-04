@@ -54,10 +54,6 @@ int main(int argc, char **argv)
   double look_up1_tab[] = {1.64647737821113, -0.06401549522493077, -0.37189732272924836, -1.7298683559749657, -0.010311991928772635, 1.2837615843359318, -1.5951452987645744};
   std::vector<double> look_up1;
   look_up1.assign(look_up1_tab,look_up1_tab+7);
-  
-  double first_fastener_up_tab[] = {0.9190583825111389, 0.42789730429649353, -0.37253227829933167, -1.7496263980865479, 0.18091551959514618, 0.9975607395172119, -0.9158101677894592};
-  std::vector<double> first_fastener_up;
-  first_fastener_up.assign(first_fastener_up_tab,first_fastener_up_tab+7);
 
   geometry_msgs::Pose first_fastener_up_lin;
   tf::Quaternion perfect_orientation;
@@ -66,39 +62,18 @@ int main(int argc, char **argv)
   first_fastener_up_lin.orientation.y = perfect_orientation.y();
   first_fastener_up_lin.orientation.z = perfect_orientation.z();
   first_fastener_up_lin.orientation.w = perfect_orientation.w();
-  first_fastener_up_lin.position.x = -0.39155;
-  first_fastener_up_lin.position.y = -0.283;
+  first_fastener_up_lin.position.x = -0.46275;
+  first_fastener_up_lin.position.y = -0.33885;
   first_fastener_up_lin.position.z = 0.2;
-  
-//   Au dessus du trou 1
-//   XYZ = [-0.39155, -0.283, 0.080] RPY=[M_PI,0,-120.0*M_PI/180.0]
-//   [0.9190583825111389, 0.42789730429649353, -0.37253227829933167, -1.7496263980865479, 0.18091551959514618, 0.9975607395172119, -0.9158101677894592]
-  
-//   Dans le trou 1
-//   XYZ = [-0.39153, -0.283, -0.010] RPY=[M_PI,0,-120.0*M_PI/180.0]
-//   [0.9150278568267822, 0.580691933631897, -0.37253355979919434, -1.812914490699768, 0.2822932004928589, 0.800197184085846, -0.9944129586219788]
 
-  double second_fastener_up_tab[] = {0.8893643021583557, 0.30610182881355286, -0.3718636929988861, -1.9161169528961182, 0.1354074478149414, 0.9433703422546387, -0.943113386631012};
-  std::vector<double> second_fastener_up;
-  second_fastener_up.assign(second_fastener_up_tab,second_fastener_up_tab+7);
   geometry_msgs::Pose second_fastener_up_lin;
   second_fastener_up_lin.orientation.x = perfect_orientation.x();
   second_fastener_up_lin.orientation.y = perfect_orientation.y();
   second_fastener_up_lin.orientation.z = perfect_orientation.z();
   second_fastener_up_lin.orientation.w = perfect_orientation.w();
-  second_fastener_up_lin.position.x = -0.36041;
-  second_fastener_up_lin.position.y = -0.23096;
-  second_fastener_up_lin.position.z = 0.2;
-//   Au dessus du trou 2
-//   XYZ = [-0.35987, -0.23188, 0.080] RPY=[M_PI,0,-120.0*M_PI/180.0]
-//   [0.8893643021583557, 0.30610182881355286, -0.3718636929988861, -1.9161169528961182, 0.1354074478149414, 0.9433703422546387, -0.943113386631012]
-  
-//   Dans le trou 2
-//   XYZ = [-0.36041, -0.23096, -0.010] RPY=[M_PI,0,-120.0*M_PI/180.0]
-//   [0.8779093027114868, 0.4785161316394806, -0.37185221910476685, -1.983768105506897, 0.25586992502212524, 0.7233907580375671, -1.045378565788269]
-  
-  
-  
+  second_fastener_up_lin.position.x = -0.49632;
+  second_fastener_up_lin.position.y = -0.39574;
+  second_fastener_up_lin.position.z = 0.2;  
   
   
   /*********** DEMO script *****************/
