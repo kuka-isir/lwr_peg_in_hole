@@ -19,14 +19,15 @@ public:
     ROS_INFO("screwdriver action server ready !");
     
     alpha_ = 0.95;
-    time_min_ = 3.0;
+    time_min_open_ = 20.0;
+    time_min_close_ = 20.0;
     time_max_ = 35.0;
   }
 
 protected:
   ros::NodeHandle nh_;
   ros::Publisher pub_cmd_, pub_filter_val_;
-  double current_effort_, filtered_val_, alpha_, time_min_, time_max_;
+  double current_effort_, filtered_val_, alpha_, time_min_open_, time_min_close_, time_max_;
   
   std_msgs::Float64 opening_cmd_, closing_cmd_, stopping_cmd_;
 
@@ -47,8 +48,8 @@ protected:
       
       ros::Time begin = ros::Time::now();
       ros::Duration spent = ros::Duration(0.0);
-      while((ros::ok() && spent.toSec()<time_min_ )
-            || (ros::ok() && spent.toSec()<time_max_ && filtered_val_ > -3.5 ) ){
+      while((ros::ok() && spent.toSec()<time_min_open_ )
+            || (ros::ok() && spent.toSec()<time_max_ && filtered_val_ > -3.8 ) ){
         // Closing for 1s
         spent = ros::Time::now() - begin;
         usleep(1000*1000*1);
@@ -67,7 +68,7 @@ protected:
       
       ros::Time begin = ros::Time::now();
       ros::Duration spent = ros::Duration(0.0);
-      while((ros::ok() && spent.toSec()<time_min_ )
+      while((ros::ok() && spent.toSec()<time_min_close_ )
             || (ros::ok() && spent.toSec()<time_max_ && filtered_val_ < 9.5 ) ){
         // Closing for 1s
         spent = ros::Time::now() - begin;
